@@ -1,4 +1,4 @@
-# Jibudget — Personal Finance & Budgeting App
+# JiBudget - Personal Finance & Budgeting App
 
 Jibudget is a personal finance web application I built to better understand how people track money in real life, not just how budgeting tools assume they do.
 
