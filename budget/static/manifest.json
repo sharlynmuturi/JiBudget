@@ -1,0 +1,88 @@
+{
+  "name": "JiBudget",
+  "short_name": "JiBudget",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0d6efd",
+  "icons": [
+    {
+      "src": "/static/icons/logoicon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/icons/logoicon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/budget/screenshots/dashboardslide4.png",
+      "type": "image/png",
+      "sizes": "1919x1032",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/budget/screenshots/transactionsslide4.png",
+      "type": "image/png",
+      "sizes": "1919x1030",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/budget/screenshots/budgetsslide4.png",
+      "type": "image/png",
+      "sizes": "1919x1031",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/budget/screenshots/walletsslide4.png",
+      "type": "image/png",
+      "sizes": "1919x1032",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/budget/screenshots/savingsslide4.png",
+      "type": "image/png",
+      "sizes": "1919x1032",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/budget/screenshots/dashboardmobile.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/static/budget/screenshots/expensemobile.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/static/budget/screenshots/addincomemobile.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/static/budget/screenshots/walletsmobile1.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/static/budget/screenshots/budgetsmobile1.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/static/budget/screenshots/budgetsmobile11.png",
+      "type": "image/png",
+      "sizes": "438x724",
+      "form_factor": "narrow"
+    }
+  ]
+}

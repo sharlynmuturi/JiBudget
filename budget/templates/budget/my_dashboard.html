@@ -1,0 +1,1122 @@
+{% extends 'budget/base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-2">
+  <div>
+    <h2 class="mb-1"><i class="bi bi-house-door me-1"></i>Welcome, {{ request.user.username }}</h2>
+    <p class="text-muted">Make the most of every shilling.</p>
+  </div>
+ 
+
+  <div class="text-end">
+    <hr style="border: none;">
+    {% if messages %}
+     <div class="d-flex flex-column align-items-end ms-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}{% if message.extra_tags %} alert-{{ message.extra_tags }}{% endif %} alert-dismissible fade show py-1 px-3 mb-2 d-inline-block" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+
+    <!-- Right: Icons -->
+    <div class="dropdown d-flex align-items-center gap-3">
+      <a href="#" class="text-muted fs-1" id="accountDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-gear"></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="accountDropdown">
+
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="{% url 'manage_subcategories' %}">
+            <i class="bi bi-tags me-2 text-success"></i> Category Setting
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="{% url 'manage_wallets' %}">
+            <i class="bi bi-wallet2 me-2 text-success"></i> Wallet Setting
+          </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#accountModal">
+              <i class="bi bi-person-circle me-2 text-success"></i> Account Settings
+            </a>
+        </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="{% url 'onboarding_view' %}">
+            <i class="bi bi-rocket-takeoff me-2 text-success"></i>Explore
+          </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center text-danger" href="{% url 'logout' %}">
+            <i class="bi bi-box-arrow-right me-2"></i> Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+
+ 
+
+</div>
+
+<div class="row">
+<div class="col-md-8">
+
+
+
+<div class="row g-4 mb-4">
+    
+
+<!-- Unassigned Budget Card --> 
+<div class="col-md-4">
+  <div 
+    class="card shadow-sm mb-4 border-0 bg-light rounded-4 position-relative overflow-hidden h-100" 
+    tabindex="0"
+    data-bs-toggle="popover"
+    data-bs-trigger="hover focus"
+    data-bs-placement="top"
+    data-bs-html="true"
+    data-bs-content="
+      <strong>Assign Budget</strong><br>
+      Ensure every shilling has a purpose by keeping this at zero.
+    "
+  >
+    <!-- Watermark Icon -->
+    <i class="bi bi-puzzle position-absolute top-50 end-0 translate-middle-y text-secondary"
+       style="font-size: 160px; opacity: 0.05; z-index: 0; pointer-events: none; margin-right: 10px;"></i>
+
+        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center px-2 py-2 position-relative h-100" style="z-index: 1;">
+          
+          {% if total_income == 0 and past_balance == 0 %}
+              <!-- New user / zero income, no rollover -->
+              <h5 class="fw-bold text-dark mb-1">Let's Set Up Your Budget</h5>
+
+                <p class="small text-muted mb-3">
+                  <i class="bi bi-clipboard-check text-primary me-2"></i>
+                  Start by adding the money you currently have in your wallets.
+                </p>
+
+              <!-- Add Starting Balance Button -->
+              <div class="d-flex gap-2 flex-wrap justify-content-center mb-3">
+                <a href="{% url 'add_starting_balance' %}" 
+                   class="btn btn-success px-3 py-2 rounded-pill fw-semibold shadow-sm">
+                  <i class="bi bi-wallet2 me-1"></i> Add Starting Balances
+                </a>
+              </div>
+
+              <!--<p class="small text-muted mb-3"> -->
+              <!--  <i class="bi bi-clipboard-check text-primary me-2"></i>Make a game plan for your money.-->
+              <!--</p>-->
+        
+          {% elif actual_available_to_budget > 0 %}
+              <!-- Funds available -->
+              <h5 class="fw-bold text-dark mb-1">Available to Budget</h5>
+              <p class="small text-muted mb-2">
+                  <i class="bi bi-bullseye text-primary me-2"></i>
+                  Unallocated funds.
+              </p>
+              <p class="fs-3 fw-semibold text-primary mb-3">
+                  KES {{ actual_available_to_budget|floatformat:2 }}
+              </p>
+        
+          {% else %}
+              <!-- All assigned -->
+              <h5 class="fw-bold text-dark mb-1">Available to Budget</h5>
+              <p class="small text-muted mb-2 text-success">
+                  <i class="bi bi-check-circle text-success me-2"></i>
+                  Your money is fully assigned.
+              </p>
+              <p class="fs-3 fw-semibold text-muted mb-3">
+                  KES {{ actual_available_to_budget|floatformat:2 }}
+              </p>
+          {% endif %}
+        
+          <!-- Action Buttons Container -->
+          <div class="d-flex gap-2 flex-wrap justify-content-center">
+            <!-- Main Action Button -->
+            <a 
+              href="{% if total_income == 0 and past_balance == 0 %}{% url 'add_starting_budget' %}{% elif actual_available_to_budget > 0 %}{% url 'add_starting_budget' %}{% else %}{% url 'all_budget_vs_actual' %}{% endif %}" 
+              class="btn btn-warning px-3 py-2 rounded-pill fw-semibold shadow-sm"
+            >
+              <i class="bi bi-plus-lg me-1"></i> 
+              {% if total_income == 0 and past_balance == 0 %}
+                Start Budgeting
+              {% elif actual_available_to_budget > 0 %}
+                Assign Funds
+              {% else %}
+                Review Budget
+              {% endif %}
+            </a>
+          </div>
+        </div>
+
+    
+  </div>
+</div>    
+    
+  <!-- Left: Main 2x2 Dashboard Cards -->
+<div class="col-md-8">
+    
+<div class="row g-4">
+
+<!-- Left to Spend -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 bg-white rounded-4 position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0" 
+       data-bs-toggle="popover" 
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>Left to Spend</strong><br>Your cash at hand across all wallets.">
+    <i class="bi bi-cash-stack position-absolute top-50 end-0 translate-middle-y text-success"
+       style="font-size: 70px; opacity: 0.06; pointer-events: none; margin-right: 10px;"></i>
+    <div class="card-body p-2 position-relative" style="z-index: 1;">
+        
+        <h5 class="card-title mb-1 d-flex align-items-center">
+          <i class="bi bi-cash-stack text-success me-1"></i>
+          Left to Spend
+        </h5>
+
+      <p class="fs-5 fw-semibold 
+                {% if actual_left_to_spend < 0 %}text-danger
+                {% elif actual_left_to_spend < total_budget|divisibleby:2 %}text-warning
+                {% else %}text-success
+                {% endif %} mb-1">
+        KES {{ actual_left_to_spend }}
+      </p>
+      {% if past_balance > 0 %}
+        
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+          Includes rollover of KES {{ past_balance }}
+        </small>
+      {% endif %}
+
+      
+        {% if actual_left_to_spend < 0 %}
+        <div class="mt-3 alert alert-warning fade show py-2 px-3 rounded" role="alert">
+          ⚠️ Your spending has exceeded your cash at hand.
+          <a href="{% url 'wallet_overview' %}" class="alert-link">Review your wallets</a>.
+          <!--<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+        </div>
+        {% endif %}
+        
+
+    </div>
+  </div>
+</div>
+
+
+ <!-- My Income -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 bg-white rounded-4 position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0"
+       data-bs-toggle="popover"
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>My Income</strong><br>Total income recorded this month.">
+    <i class="bi bi-arrow-down-circle position-absolute top-50 end-0 translate-middle-y text-success"
+       style="font-size: 70px; opacity: 0.06; pointer-events: none; margin-right: 10px;"></i>
+    <div class="card-body p-2 position-relative" style="z-index: 1;">
+
+        <h5 class="card-title mb-1 d-flex align-items-center">
+          <i class="bi bi-arrow-down-circle text-success me-1"></i>
+          My Income
+        </h5>
+        
+      <p class="fs-5 fw-semibold text-dark mb-2">KES {{ total_income }}</p>
+      {% if planned_income_total > 0 %}
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+          KES {{ planned_income_total }} is upcoming
+        </small>
+        <br>
+      {% endif %}
+      <!--<a href="{% url 'add_income' %}" class="btn btn-sm btn-outline-success rounded-pill">+ Add Funds</a>-->
+    </div>
+  </div>
+</div>
+
+<!-- Budget -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 bg-white rounded-4 position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0"
+       data-bs-toggle="popover"
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>Budget</strong><br>The total budget you've set for this month.">
+    <i class="bi bi-bar-chart-fill position-absolute top-50 end-0 translate-middle-y text-primary"
+       style="font-size: 70px; opacity: 0.06; pointer-events: none; margin-right: 10px;"></i>
+    <div class="card-body p-2 position-relative" style="z-index: 1;">
+        <h5 class="card-title mb-1 d-flex align-items-center">
+          <i class="bi bi-bar-chart-fill text-success me-1"></i>
+          Budget
+        </h5>
+      <p class="fs-5 fw-semibold text-dark mb-0">KES {{ total_budget }}</p>
+      {% if future_budget > 0 %}
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+          Allocated KES {{ future_budget }} for future spending
+        </small>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- My Expenses -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 bg-white rounded-4 position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0"
+       data-bs-toggle="popover"
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>My Expenses</strong><br>Total expenses logged this month.">
+    <i class="bi bi-arrow-up-circle position-absolute top-50 end-0 translate-middle-y text-danger"
+       style="font-size: 70px; opacity: 0.06; pointer-events: none; margin-right: 10px;"></i>
+    <div class="card-body p-2 position-relative" style="z-index: 1;">
+        <h5 class="card-title mb-1 d-flex align-items-center">
+          <i class="bi bi-arrow-up-circle text-success me-1"></i>
+          My Expenses
+        </h5>
+      <p class="fs-5 fw-semibold text-dark mb-2">KES {{ total_expense }}</p>
+      {% if planned_expense_total > 0 %}
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+          KES {{ planned_expense_total }} is upcoming
+        </small>
+        <br>
+
+      {% endif %}
+      <!--<a href="{% url 'add_expense' %}" class="btn btn-sm btn-outline-danger rounded-pill">+ Add Spending</a>-->
+    </div>
+  </div>
+</div>
+
+
+</div>
+
+  
+</div>
+
+
+</div>
+
+<!--<div class="d-flex justify-content-between align-items-center mb-2">-->
+<!--  <span class="text-muted small fst-italic">{{ month }} Summary</span>-->
+<!--</div>-->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+    <a class="d-flex align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#recentTransactionsCollapse"
+       role="button"
+       aria-expanded="true"
+       aria-controls="recentTransactionsCollapse">
+      <i class="bi bi-chevron-up me-2 toggle-icon"></i>
+      Recent Transactions
+    </a>
+    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-success">See All →</a>
+  </div>
+
+  <div class="collapse show" id="recentTransactionsCollapse">
+    <div class="card-body">
+
+      <!-- Tab Buttons -->
+    <div class="nav nav-pills nav-justified mb-3" id="recent-transactions-tabs" role="tablist">
+      <button class="nav-link border text-dark shadow-sm" id="recent-incomes-tab"
+              data-bs-toggle="tab" data-bs-target="#recent-incomes" type="button" role="tab">
+        <i class="bi bi-cash-stack me-1"></i> Incomes
+      </button>
+      <button class="nav-link border text-dark shadow-sm" id="recent-expenses-tab"
+              data-bs-toggle="tab" data-bs-target="#recent-expenses" type="button" role="tab">
+        <i class="bi bi-cart4 me-1"></i> Expenses
+      </button>
+    </div>
+    
+
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="recent-transactions-tab-content">
+
+        <!-- Incomes Tab -->
+        <div class="tab-pane fade show active" id="recent-incomes" role="tabpanel">
+          <table class="table table-lg table-hover small mb-0">
+            <thead class="table-light">
+              <tr><th>Date</th><th>Wallet</th><th>Income</th><th>Amount</th></tr>
+            </thead>
+            <tbody>
+              {% for income in incomes|slice:":3" %}
+              <tr>
+                <!--<td>{{ income.date }}</td>-->
+                <td>
+                  {{ income.date }}
+                  {% if income.is_upcoming %}
+                    <span class="badge bg-info ms-1">Upcoming</span>
+                  {% endif %}
+                </td>
+                <td>{{ income.income_source }}</td>
+                <td>{{ income.category }} - {{ income.subcategory }}</td>
+                <td>KES {{ income.amount }}</td>
+              </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <div class="p-0 rounded">
+                      <i class="bi bi-emoji-frown text-warning fs-1 d-block mb-2"></i>
+                      <p class="mb-1 text-muted">No incomes recorded this month.</p>
+                      <a href="{% url 'add_income' %}" class="btn btn-sm btn-success rounded-pill">
+                        <i class="bi bi-plus-circle me-1"></i> Log one now
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Expenses Tab -->
+        <div class="tab-pane fade" id="recent-expenses" role="tabpanel">
+          <table class="table table-lg table-hover small mb-0">
+            <thead class="table-light">
+              <tr><th>Date</th><th>Wallet</th><th>Expense</th><th>Amount</th></tr>
+            </thead>
+            <tbody>
+              {% for expense in expenses|slice:":3" %}
+              <tr>
+                <!--<td>{{ expense.date }}</td>-->
+              <td>
+                {{ expense.date }}
+                {% if expense.is_planned %}
+                  <span class="badge bg-info ms-1">Upcoming</span>
+                {% endif %}
+              </td>
+                <td>{{ expense.source }}</td>
+                <td>{{ expense.subcategory }}</td>
+                <td>KES {{ expense.amount }}</td>
+              </tr>
+              {% empty %}
+
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <div class="p-0 rounded">
+                      <i class="bi bi-emoji-frown text-warning fs-1 d-block mb-2"></i>
+                      <p class="mb-1 text-muted">No expenses recorded this month.</p>
+                      <a href="{% url 'add_expense' %}" class="btn btn-sm btn-danger rounded-pill">
+                        <i class="bi bi-plus-circle me-1"></i> Log one now
+                      </a>
+                    </div>
+                  </td>
+                </tr>              
+              
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+    <a class="d-flex align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#budgetCollapse{{ forloop.counter }}"
+       role="button"
+       aria-expanded="true"
+       aria-controls="budgetCollapse{{ forloop.counter }}">
+      <i class="bi bi-chevron-up me-2 toggle-icon"></i>
+      Budget vs Actual
+    </a>
+    <a href="{% url 'all_budget_vs_actual' %}" class="btn btn-sm btn-outline-primary">
+      See All →
+    </a>
+  </div>
+
+  <div class="collapse show" id="budgetCollapse{{ forloop.counter }}">
+    <div class="card-body p-0">
+      <table class="table table-lg table-hover small mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Expense</th>
+            <th>Budgeted</th>
+            <th>Spent</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in report %}
+          <tr>
+            <td>{{ entry.item }}</td>
+            <td>KES {{ entry.budgeted|floatformat:2 }}</td>
+            <td>KES {{ entry.actual|floatformat:2 }}</td>
+            <td>
+              {% if entry.difference < 0 %}
+                <span class="text-danger">Overspent by KES {{ entry.difference|floatformat:2|slice:"1:" }}</span>
+              {% elif entry.difference == 0 %}
+                <span class="text-muted">Balanced</span>
+              {% else %}
+                <span class="text-success">Remaining KES {{ entry.difference|floatformat:2 }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <div class="p-0 rounded">
+                      <i class="bi bi-emoji-frown text-warning fs-1 d-block mb-2"></i>
+                      <p class="mb-1 text-muted">No budgets set for the month yet.</p>
+                      <a href="{% url 'add_starting_budget' %}" class="btn btn-sm btn-warning rounded-pill">
+                        <i class="bi bi-plus-circle me-1"></i> Set one now
+                      </a>
+                    </div>
+                  </td>
+                </tr>          
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+    
+
+
+</div>
+
+
+<!-- Charts Wrapper Card -->
+<div class="col-md-4">
+
+
+
+    <div class="card shadow-sm mb-4 border-0 rounded-4 p-4 bg-transparent text-dark position-relative overflow-hidden">
+      <i class="bi bi-wallet2 position-absolute top-50 start-50 translate-middle text-secondary"
+         style="font-size: 120px; opacity: 0.04; z-index: 0; pointer-events: none;"></i>
+      <div class="position-relative" style="z-index: 1;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="fw-bold mb-1">Wallets</h4>
+            <p class="text-muted mb-0">Wallet with the highest activity this month.</p>
+          </div>
+          <a href="{% url 'wallet_overview' %}" class="btn btn-sm btn-outline-secondary">View All ↗</a>
+        </div>
+
+        <div class="row g-3">
+            {% if most_active_wallet %}
+              <div class="col-12">
+                <div class="card shadow-sm border-0 rounded-4 bg-secondary-subtle">
+                  <div class="card-body p-3">
+                    <h6 class="fw-semibold mb-3 text-dark">{{ most_active_wallet.name }}</h6>
+                    <p class="mb-2 text-muted">
+                      <i class="bi bi-arrow-down-circle me-1 text-success"></i>Income:
+                      <span class="fw-semibold text-success">KES {{ most_active_wallet.income_total|floatformat:2 }}</span>
+                    </p>
+                    <p class="mb-2 text-muted">
+                      <i class="bi bi-arrow-up-circle me-1 text-danger"></i>Expenses:
+                      <span class="fw-semibold text-danger">KES {{ most_active_wallet.expense_total|floatformat:2 }}</span>
+                    </p>
+
+                  </div>
+                </div>
+              </div>
+            {% else %}
+                <div class="alert alert-secondary mb-0 mt-2 text-center" id="persistent-alert">
+                  <i class="bi bi-emoji-frown text-secondary fs-2 d-block mb-2"></i>
+                  No wallet activity this month. 
+                  <a href="{% url 'add_starting_balance' %}" class="alert-link">Add activity</a>.
+                </div>
+
+            {% endif %}
+        </div>
+        
+      </div>
+    </div>
+
+  
+<div class="row g-4 mb-4">
+<!-- Savings Card -->
+<div class="col-12">
+  <div class="card shadow-sm border-0 rounded-4 p-4 bg-transparent text-dark position-relative overflow-hidden">
+    <!-- Watermark Icon -->
+    <i class="bi bi-piggy-bank position-absolute top-50 start-50 translate-middle text-secondary"
+       style="font-size: 200px; opacity: 0.04; z-index: 0; pointer-events: none;"></i>
+
+    <!-- Foreground Content -->
+    <div class="position-relative" style="z-index: 1;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="fw-bold mb-1">Savings</h4>
+            <p class="text-muted fs-6 mb-0">Latest saving goals.</p>
+          </div>
+          <a href="{% url 'saving_list' %}" class="btn btn-sm btn-outline-info">View All &nearr;</a>
+        </div>
+        
+        {% if recent_goals %}
+          <div class="row g-3">
+            {% for goal in recent_goals %}
+            <div class="col-md-12">
+              <div class="p-4 rounded-3 h-100 position-relative
+                {% if goal.saved_so_far >= goal.target_amount %}bg-success-subtle{% else %}bg-info-subtle{% endif %}">
+        
+                {% if goal.saved_so_far >= goal.target_amount %}
+                  <!-- Ribbon -->
+                  <div class="ribbon"><span>Goal Reached</span></div>
+                {% endif %}
+        
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="fw-bold text-dark mb-1">{{ goal.subcategory }}</h6>
+                    <p class="text-muted mb-1">
+                      Target: KES {{ goal.target_amount|floatformat:2 }}
+                    </p>
+                    <p class="text-muted mb-2">
+                      Saved: KES {{ goal.saved_so_far|floatformat:2 }}
+                    </p>
+                  </div>
+                  <div class="text-end">
+                    {% if goal.saved_so_far >= goal.target_amount %}
+                      <button class="btn btn-sm btn-outline-secondary mb-2" disabled>
+                        <i class="bi bi-check-circle me-1"></i>Completed
+                      </button>
+                    {% else %}
+                      <a href="{% url 'edit_goal' goal.id %}" class="btn btn-sm btn-outline-primary mb-2">
+                        <i class="bi bi-plus-circle me-1"></i>Top Up
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar
+                    {% if goal.saved_so_far >= goal.target_amount %}bg-success{% else %}bg-info{% endif %}"
+                    role="progressbar"
+                    style="width: {{ goal.progress|floatformat:0 }}%;"
+                    aria-valuenow="{{ goal.progress|floatformat:0 }}" 
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="text-end small text-muted mt-1">
+                  {{ goal.progress|floatformat:1 }}% saved
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+        
+                <div class="alert alert-info mb-0 mt-2 text-center" id="persistent-alert">
+                  <i class="bi bi-emoji-frown text-secondary fs-2 d-block mb-2"></i>
+                  No savings goals yet. 
+                  <a href="{% url 'create_goal' %}" class="alert-link">Create one now</a>.
+                </div>
+
+        {% endif %}
+    </div>
+    
+  </div>
+</div>
+</div>
+
+
+<!-- Visual Insights Section -->
+<div class="card shadow-sm mb-4 bg-transparent border-0"
+     tabindex="0"
+     data-bs-toggle="popover"
+     data-bs-trigger="hover focus"
+     data-bs-placement="top"
+     data-bs-html="true"
+     data-bs-content="Visual summaries and charts of this month's activity.">
+
+  <div class="card-header bg-light border-0 fw-semibold fs-6 d-flex align-items-center rounded-4 py-3 px-3">
+    <i class="bi bi-bar-chart-line me-2 fs-5 text-primary"></i>
+    <span class="text-dark">Visual Insights</span>
+  </div>
+  
+  <div class="card-body px-2 py-3">
+
+       <!--Budget Donut Chart -->
+<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">
+  <!-- Watermark Icon -->
+  <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#budgetDonutSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="budgetDonutSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        My Budget Usage
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="budgetDonutSection">
+    <div class="card-body position-relative" style="z-index: 1;">
+      <canvas id="budgetDonutChart" height="250"></canvas>
+    </div>
+  </div>
+</div>
+
+
+
+ <!--Subcategory Donut Chart -->
+<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">
+   <!--Watermark Icon -->
+  <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#subcategoryDonutSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="subcategoryDonutSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Spending Breakdown
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="subcategoryDonutSection">
+    <div class="card-body position-relative" style="z-index: 1;">
+      <canvas id="subcategoryDonutChart" height="250"></canvas>
+       <!--Legend below the chart -->
+      <ul id="subcategoryList" class="list-unstyled mt-3 small text-muted"></ul>
+    </div>
+  </div>
+</div>
+
+    <!-- Spending by Category Chart -->
+<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">
+  <i class="bi bi-pie-chart position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#pieChartSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="pieChartSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Spending by Category
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="pieChartSection">
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <canvas id="categoryPieChart" height="450"></canvas>
+    </div>
+  </div>
+</div>
+
+
+
+    <!-- Income vs Expense Chart -->
+<div class="card shadow-sm rounded-4 position-relative overflow-hidden">
+  <i class="bi bi-bar-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#barChartSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="barChartSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Income vs Expense
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="barChartSection">
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <canvas id="transactionBarChart" height="250"></canvas>
+    </div>
+  </div>
+</div>
+    
+  </div>
+</div>
+
+</div>
+
+</div>
+
+
+  <!-- savings Modal -->
+  <div class="modal fade" id="topUpSavingsModal" tabindex="-1" aria-labelledby="topUpSavingsLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" action="{% url 'top_up_savings' %}">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="topUpSavingsLabel">Top Up Savings Jar</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              
+            <div class="mb-3">
+              <label for="savingsJarSelect" class="form-label">Select Savings Jar / <a href="{% url 'create_goal' %}">Create Jar</a> </label>
+              <select class="form-select" id="savingsJarSelect" name="goal_id" required>
+                <option value="" selected disabled>
+                  Choose a jar
+                </option>
+                {% for jar in goals %}
+                  {% if jar.saved_so_far < jar.target_amount %}
+                    <option value="{{ jar.id }}">
+                      {{ jar.subcategory.name }} - KES {{ jar.saved_so_far|floatformat:2 }} of {{ jar.target_amount|floatformat:2 }} saved so far
+                    </option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+
+
+            <div class="mb-3">
+              <label for="topUpAmount" class="form-label">Amount to Top Up (max: KES {{ available_to_budget|floatformat:2 }})</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="topUpAmount" 
+                name="amount" 
+                min="1" 
+                max="{{ available_to_budget|floatformat:2 }}" 
+                step="0.01" 
+                required
+              >
+            </div>
+            <div class="mb-3">
+              <label for="sourceSelect" class="form-label">Select Wallet</label>
+              <select class="form-select" id="sourceSelect" name="source_id" required>
+                <option value="" selected disabled>Choose a wallet</option>
+                {% for wallet in wallets %}
+                  <option value="{{ wallet.id }}">{{ wallet.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Top Up</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.forEach(function (popoverTriggerEl) {
+      new bootstrap.Popover(popoverTriggerEl)
+    })
+  });
+</script>
+
+
+
+<script>
+  const ctx = document.getElementById('transactionBarChart').getContext('2d');
+  const income = {{ total_income|default:0 }};
+  const expense = {{ total_expense|default:0 }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Income', 'Expense'],
+      datasets: [{
+        label: 'KES',
+        data: [income, expense],
+        backgroundColor: ['#198754', '#dc3545'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Income vs Expense'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `KES ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'KES ' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const donutCtx = document.getElementById('budgetDonutChart').getContext('2d');
+  const totalBudget = {{ total_budget|default:0 }};
+  const totalSpent = {{ total_spent|default:0 }};
+  const remaining = totalBudget - totalSpent;
+
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [
+        `Spent (KES {{ total_spent }})`,
+        `Budgeted (KES {{ total_budget }})`
+      ],
+      datasets: [{
+        data: [totalSpent, remaining > 0 ? remaining : 0],
+        backgroundColor: ['#dc3545', '#fbe8a6'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Budget Usage'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: KES ${context.parsed}`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const subcategoryData = JSON.parse('{{ subcategory_expenses_json|escapejs }}');
+
+    const labels = Object.keys(subcategoryData);
+    const values = Object.values(subcategoryData);
+
+    // Function to generate N distinct colors using HSL
+    function generateColors(n) {
+        const colors = [];
+        for (let i = 0; i < n; i++) {
+            const hue = (i * 360 / n) % 360; // spread hues evenly
+            colors.push(`hsl(${hue}, 70%, 55%)`); 
+        }
+        return colors;
+    }
+
+    const colors = generateColors(labels.length);
+
+    // Create doughnut chart
+    const ctx = document.getElementById('subcategoryDonutChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '60%',
+            plugins: {
+                legend: { display: false },  // legend handled manually below
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const dataset = context.dataset;
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: KES ${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Populate custom legend
+    const total = values.reduce((a, b) => a + b, 0);
+    const listContainer = document.getElementById('subcategoryList');
+    listContainer.innerHTML = '';
+
+    labels.forEach((label, index) => {
+        const percent = ((values[index] / total) * 100).toFixed(1);
+        const li = document.createElement('li');
+        li.classList.add('d-flex', 'align-items-center', 'mb-2');
+        li.innerHTML = `
+            <span style="display:inline-block; width:16px; height:16px; background-color:${colors[index]}; border-radius:3px; margin-right:8px;"></span>
+            <span class="flex-grow-1">${label}</span>
+            <span class="fw-semibold text-muted">
+                KES ${values[index].toLocaleString()} (${percent}%)
+            </span>
+        `;
+        listContainer.appendChild(li);
+    });
+});
+</script>
+
+
+
+<script>
+  const categoryDataRaw = {{ category_expenses_json|safe }};
+  const categoryLabels = Object.keys(categoryDataRaw);
+  const categoryData = Object.values(categoryDataRaw);
+
+  const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+
+  new Chart(categoryCtx, {
+    type: 'pie',
+    data: {
+      labels: categoryLabels,
+      datasets: [{
+        data: categoryData,
+        backgroundColor: ['#0d6efd', '#dc3545', '#ffc107', '#198754', '#6f42c1', '#20c997'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Expense Distribution by Category'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const value = context.parsed;
+              const percent = ((value / total) * 100).toFixed(1);
+              return `${context.label}: KES ${value} (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<script>
+  setTimeout(function () {
+    const alerts = document.querySelectorAll('.alert:not(#persistent-alert)');
+    
+    // Add fade/show to those alerts
+    alerts.forEach(alert => alert.classList.add('fade', 'show'));
+    
+    // Then remove them after another delay
+    setTimeout(() => {
+      alerts.forEach(alert => alert.remove());
+    }, 3000);
+  }, 3000);
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (toggle) {
+      const icon = toggle.querySelector('.toggle-icon');
+      const targetId = toggle.getAttribute('href');
+      const target = document.querySelector(targetId);
+
+      if (target && icon) {
+        target.addEventListener('hide.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-up');
+          icon.classList.add('bi-chevron-down');
+        });
+
+        target.addEventListener('show.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-down');
+          icon.classList.add('bi-chevron-up');
+        });
+      }
+    });
+  });
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('#recent-transactions-tabs .nav-link');
+
+    function activateTab(tab) {
+      tabs.forEach(t => {
+        t.classList.remove('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+        t.classList.add('bg-light', 'text-muted');
+      });
+      tab.classList.add('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      tab.classList.remove('bg-light', 'text-muted');
+    }
+
+    // Restore last active tab from localStorage
+    const lastTabId = localStorage.getItem('lastRecentTransactionsTab');
+    const defaultTab = lastTabId ? document.getElementById(lastTabId) : tabs[0];
+    if (defaultTab) {
+      activateTab(defaultTab);
+      const targetId = defaultTab.getAttribute('data-bs-target');
+      const targetSection = document.querySelector(targetId);
+      if (targetSection) {
+        const container = targetSection.closest('.tab-content');
+        if (container) {
+          container.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+        }
+        targetSection.classList.add('show', 'active');
+      }
+    }
+
+    // Save clicked tab ID
+    tabs.forEach(tab => {
+      tab.addEventListener('shown.bs.tab', function () {
+        activateTab(this);
+        localStorage.setItem('lastRecentTransactionsTab', this.id);
+      });
+    });
+  });
+</script>
+
+
+
+
+{% endblock %}

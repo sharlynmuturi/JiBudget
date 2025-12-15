@@ -1,0 +1,71 @@
+{% extends 'budget/base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container section-spacing mt-5 pt-5" style="margin-top: 3rem !important;">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="text-center mb-4">
+        <h3 class="fw-bold text-primary">Welcome Back</h3>
+        <p class="text-muted fs-6 mb-0">Log in to continue managing your money with Jibudget.</p>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+              <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                  {{ field.label }}
+                </label>
+
+                {% if field.field.widget.input_type == "password" %}
+                  <input type="password" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                         class="form-control rounded-3 py-2" placeholder="{{ field.label }}">
+                {% elif field.field.widget.input_type == "email" %}
+                  <input type="email" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                         value="{{ field.value|default:'' }}" class="form-control rounded-3 py-2"
+                         placeholder="you@example.com">
+                {% else %}
+                  <input type="text" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                         value="{{ field.value|default:'' }}" class="form-control rounded-3 py-2"
+                         placeholder="{{ field.label }}">
+                {% endif %}
+
+                {% if field.errors %}
+                  <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-warning btn-lg rounded-3 fw-semibold">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </form>
+
+        <p class="text-center mt-3">
+          <a href="{% url 'password_reset' %}" class="text-decoration-none small text-muted">Forgot your password?</a>
+        </p>
+
+          <p class="text-center mt-4 small text-muted">
+            Don't have an account?
+            <a href="{% url 'signup' %}" class="text-decoration-none">Create one</a>
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="bg-light text-muted py-1 mt-5">
+  <div class="text-center mt-3 small text-muted">
+    &copy; {{ now|date:"Y" }} Jibudget. All rights reserved.
+  </div>
+</footer>
+{% endblock %}

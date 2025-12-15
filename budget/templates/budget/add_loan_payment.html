@@ -1,0 +1,156 @@
+{% extends 'budget/base.html' %}
+{% block title %}Add Payment{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-5">
+
+      <div class="card shadow-sm border-0 mb-4">
+        <!-- Header -->
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-cash-stack fs-4 me-2 text-success"></i>
+          <h5 class="mb-0 fw-semibold">Add Payment for {{ loan.name }}</h5>
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                  tabindex="0"
+                  data-bs-toggle="popover"
+                  data-bs-trigger="focus"
+                  data-bs-placement="left"
+                  data-bs-html="true"
+                  title="Record a Payment"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Select the wallet where the payment is made. Add a new wallet if not listed.</li>
+                      <li>Enter the payment amount and the date, transaction will be recorded automatically.</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-warning alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- Wallet Section -->
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Wallet</h6>
+              <div class="input-group">
+                <select name="source_id" id="id_source_id" class="form-select" required>
+                  <option value="">Select Wallet</option>
+                  {% for source in wallets %}
+                    <option value="{{ source.id }}">{{ source.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addWalletModal">+</button>
+              </div>
+            </div>
+
+            <!-- Payment Details Section -->
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Payment Details</h6>
+              <div class="mb-3">
+                <label for="id_amount" class="form-label">Amount (KES)</label>
+                <input type="number" name="amount" id="id_amount" class="form-control" placeholder="e.g. 5000" value="{{ form.amount.value|default:'' }}">
+              </div>
+              <div class="mb-3">
+                <label for="id_date" class="form-label">Payment Date</label>
+                <input type="date" name="date" id="id_date" class="form-control" value="{{ form.date.value|default:'' }}">
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-success d-flex align-items-center gap-1">
+                <i class="bi bi-check-circle"></i> Add Payment
+              </button>
+              <a href="{% url 'loan_detail' loan.id %}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Wallet Modal -->
+<div class="modal fade" id="addWalletModal" tabindex="-1" aria-labelledby="addWalletModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="walletForm">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addWalletModalLabel">Add Wallet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <input type="text" name="name" id="walletName" class="form-control" placeholder="e.g. M-Pesa" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add Wallet</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Initialize popovers
+  var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+    return new bootstrap.Popover(popoverTriggerEl)
+  });
+
+  // Handle new wallet creation
+  const walletForm = document.getElementById('walletForm');
+  if (walletForm) {
+    walletForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('walletName');
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      fetch("{% url 'add_expense_source' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Add new wallet to dropdown
+          const select = document.getElementById("id_source_id");
+          const option = new Option(data.name, data.id, true, true);
+          select.add(option);
+
+          // Reset form and hide modal
+          walletForm.reset();
+          const modal = bootstrap.Modal.getInstance(document.getElementById("addWalletModal"));
+          modal.hide();
+        } else {
+          // Duplicate or error
+          alert(data.error || "This wallet already exists.");
+        }
+      })
+      .catch(err => console.error("Error adding wallet:", err));
+    });
+  }
+});
+</script>
+
+{% endblock %}

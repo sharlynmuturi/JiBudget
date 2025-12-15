@@ -1,0 +1,193 @@
+{% extends "budget/base.html" %}
+{% block title %}Add Transaction{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+
+        <!-- Card Header -->
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-journal-plus fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">Log Transaction for {{ account.name }}</h5>
+
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                  tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left"
+                  data-bs-html="true"
+                  title="Transaction"
+                  data-bs-content="
+                  <ul style='padding-left:1rem; margin-bottom:0;'>
+                    <li>Select the action type (Buy, Sell, Dividend, Deposit, etc.).</li>
+                    <li>Units & Price auto-calculate the Amount for buys/sells.</li>
+                    <li>Select the wallet where this transaction occurred. Add new wallets via the + button.</li>
+                    <li>Dividends, interests, deposits, withdrawals, and expenses use only the amount field.</li>
+                  </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        <div class="card-body">
+
+          <form method="post" id="transactionForm">
+            {% csrf_token %}
+
+            <!-- Date -->
+            <div class="bg-light rounded p-3 mb-3">
+              <label for="id_date" class="form-label">Date</label>
+              {{ form.date }}
+            </div>
+
+            <!-- Action -->
+            <div class="bg-light rounded p-3 mb-3">
+              <label for="id_action" class="form-label">Action</label>
+              {{ form.action }}
+            </div>
+
+            <!-- Units -->
+            <div class="bg-light rounded p-3 mb-3" id="unitsField">
+              <label for="id_units" class="form-label">Units</label>
+              {{ form.units }}
+            </div>
+
+            <!-- Price per Unit -->
+            <div class="bg-light rounded p-3 mb-3" id="priceField">
+              <label for="id_price_per_unit" class="form-label">Price per Unit</label>
+              {{ form.price_per_unit }}
+            </div>
+
+            <!-- Amount -->
+            <div class="bg-light rounded p-3 mb-3" id="amountField">
+              <label for="id_amount" class="form-label">Amount</label>
+              {{ form.amount }}
+              <small class="text-muted">Auto-calculated for buy/sell.</small>
+            </div>
+
+            <!-- Wallet -->
+            <div class="bg-light rounded p-3 mb-3">
+              <label for="id_wallet" class="form-label">Wallet</label>
+              <div class="input-group">
+                {{ form.wallet }}
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addWalletModal">+</button>
+              </div>
+              <small class="text-muted">Optional for tracking transactions.</small>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-success rounded-4">💾 Save Transaction</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Wallet Modal -->
+<div class="modal fade" id="addWalletModal" tabindex="-1" aria-labelledby="addWalletModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addWalletForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addWalletModalLabel">Add Wallet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <input type="text" name="name" id="walletName" class="form-control" placeholder="Wallet Name" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Popover
+  var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+  var popoverList = popoverTriggerList.map(function (el) { return new bootstrap.Popover(el) });
+
+  // Toggle units/price/amount
+  const actionSelect = document.getElementById("id_action");
+  const unitsField = document.getElementById("unitsField");
+  const priceField = document.getElementById("priceField");
+  const amountField = document.getElementById("amountField");
+  const unitsInput = document.getElementById("id_units");
+  const priceInput = document.getElementById("id_price_per_unit");
+  const amountInput = document.getElementById("id_amount");
+
+  function toggleFields() {
+    const action = actionSelect.value;
+    unitsField.style.display = "block";
+    priceField.style.display = "block";
+    amountField.style.display = "block";
+    amountInput.readOnly = false;
+
+    if (["BUY", "SELL"].includes(action)) {
+      amountInput.readOnly = true;
+    } else if (["DEPOSIT","WITHDRAW","DIVIDEND","INTEREST","RENTAL","EXPENSE","CAPITAL_SHARE","CONTRIBUTION"].includes(action)) {
+      unitsField.style.display = "none";
+      priceField.style.display = "none";
+      amountInput.readOnly = false;
+    }
+  }
+
+  function autoCalcAmount() {
+    if (["BUY","SELL"].includes(actionSelect.value)) {
+      const units = parseFloat(unitsInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      amountInput.value = (units * price).toFixed(2);
+    }
+  }
+
+  actionSelect.addEventListener("change", toggleFields);
+  unitsInput.addEventListener("input", autoCalcAmount);
+  priceInput.addEventListener("input", autoCalcAmount);
+  toggleFields();
+
+
+});
+</script>
+
+<script>
+document.getElementById("addWalletForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const nameInput = document.getElementById("walletName");
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  fetch("{% url 'add_expense_source' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: JSON.stringify({ name })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Wallet created successfully
+      const select = document.getElementById("id_wallet");
+      const option = new Option(data.name, data.id, true, true);
+      select.add(option);
+
+      nameInput.value = "";
+      const modal = bootstrap.Modal.getInstance(document.getElementById("addWalletModal"));
+      modal.hide();
+    } else if (data.error) {
+      // Show specific error if wallet already exists
+      alert(data.error); 
+    } else {
+      alert("Could not add wallet.");
+    }
+  })
+  .catch(err => console.error("Error adding wallet:", err));
+});
+</script>
+
+
+{% endblock %}

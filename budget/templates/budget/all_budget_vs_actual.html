@@ -1,0 +1,180 @@
+{% extends 'budget/base.html' %}
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start">
+  <div>
+    <hr style="border: none;">
+    <h2 class="mb-1"><i class="bi bi-bar-chart-line me-1"></i> My Budget Plans</h2>
+    <p class="text-muted">Budget for all your expenses.</p>
+  </div>
+
+  <hr style="border: none;">
+
+  <div class="text-end">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if duplicate_warning %}
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ duplicate_warning }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Pill Navigation Tabs -->
+<ul class="nav nav-pills gap-2 mb-4" id="main-tab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+            id="overview-tab"
+            data-bs-toggle="pill"
+            data-bs-target="#overview"
+            type="button"
+            role="tab">
+      <i class="bi bi-folder2-open"></i> My Budgets
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+            id="monthly-tab"
+            data-bs-toggle="pill"
+            data-bs-target="#monthly-report"
+            type="button"
+            role="tab">
+      <i class="bi bi-calendar-week"></i> Budget vs Spent
+    </button>
+  </li>
+</ul>
+
+
+
+<div class="tab-content" id="main-tabContent">
+  <!-- Overview Panel -->
+  <div class="tab-pane fade show active" id="overview" role="tabpanel">
+    {% include "budget/all_budgets.html" %}
+  </div>
+
+  <!-- Monthly Report Panel -->
+  <div class="tab-pane fade" id="monthly-report" role="tabpanel">
+    <a href="{% url 'add_starting_budget' %}" class="btn btn-sm btn-outline-warning mb-3">+ Set Budget</a>
+
+    <div class="container-fluid px-3 mt-4">
+
+      {% if monthly_reports %}
+        <!-- Month Tab Buttons -->
+        <div class="d-flex flex-wrap gap-2 mb-4" role="group">
+          {% for month_data in monthly_reports %}
+            <button type="button"
+                    class="btn btn-outline-secondary rounded-pill px-4 py-2 border-0 month-tab {% if forloop.first %}active{% endif %}"
+                    data-target="#report-{{ forloop.counter }}">
+              {{ month_data.month }}
+            </button>
+          {% endfor %}
+        </div>
+
+        <!-- Monthly Reports -->
+        {% for month_data in monthly_reports %}
+          <div class="month-report {% if not forloop.first %}d-none{% endif %}" id="report-{{ forloop.counter }}">
+              <div class="card-body">
+                <table class="table table-bordered table-hover small mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Expense</th>
+                      <th>Budgeted</th>
+                      <th>Spent</th>
+                      <th>Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in month_data.report %}
+                      <tr>
+                        <td>{{ entry.item }}</td>
+                        <td>KES {{ entry.budgeted|floatformat:2 }}</td>
+                        <td>KES {{ entry.actual|floatformat:2 }}</td>
+                        <td>
+                          {% if entry.difference < 0 %}
+                            <span class="text-danger">Overspent by KES {{ entry.difference|floatformat:2|slice:"1:" }}</span>
+                          {% elif entry.difference == 0 %}
+                            <span class="text-muted">Balanced</span>
+                          {% else %}
+                            <span class="text-success">Remaining KES {{ entry.difference|floatformat:2 }}</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-info-circle fs-3 mb-2 d-block"></i>
+          <p class="mb-0 fs-5">No records available.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+<!-- Tab Switching Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = document.querySelectorAll(".month-tab");
+    const reports = document.querySelectorAll(".month-report");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", function () {
+        // Deactivate all tabs
+        tabButtons.forEach(b => b.classList.remove("active"));
+        // Hide all reports
+        reports.forEach(r => r.classList.add("d-none"));
+
+        // Activate clicked tab
+        this.classList.add("active");
+        const targetId = this.getAttribute("data-target");
+        const targetReport = document.querySelector(targetId);
+        if (targetReport) {
+          targetReport.classList.remove("d-none");
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = document.querySelectorAll('#main-tab .nav-link');
+
+    function updateTabStyles() {
+      tabButtons.forEach(btn => {
+        if (btn.classList.contains('active')) {
+          btn.classList.add('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+          btn.classList.remove('bg-light', 'text-muted');
+        } else {
+          btn.classList.remove('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+          btn.classList.add('bg-light', 'text-muted');
+        }
+      });
+    }
+
+    // Initial setup on page load
+    updateTabStyles();
+
+    // Also update styles on click
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', updateTabStyles);
+    });
+  });
+</script>
+
+
+{% endblock %}

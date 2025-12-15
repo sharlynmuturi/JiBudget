@@ -1,0 +1,321 @@
+{% extends "budget/base.html" %}
+{% block title %}Customize Categories{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+
+        <!-- Header -->
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-list-check fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">Customize Categories</h5>
+
+          <!-- Info Popover -->
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                  data-bs-toggle="popover"
+                  data-bs-trigger="focus"
+                  data-bs-placement="left"
+                  title="Customize Your View"
+                  data-bs-html="true"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Hide incomes or expenses you don't need populating your dropdowns, add your own.</li>
+                      <li>Apply changes.</li>
+                    </ul>">
+            <i class="bi bi-question-circle fs-5"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Reset All
+          <form method="POST" class="text-end mb-3">
+            {% csrf_token %}
+            <button type="submit" name="reset_hidden" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Reset All Hidden
+            </button>
+          </form>
+            -->
+
+          <!-- Tab Buttons -->
+          <div class="nav nav-pills nav-justified mb-3" id="subcategory-tabs" role="tablist">
+            <button class="nav-link active border text-dark shadow-sm" id="income-tab"
+                    data-bs-toggle="tab" data-bs-target="#income-panel" type="button" role="tab">
+              <i class="bi bi-cash-stack me-1"></i> Incomes
+            </button>
+            <button class="nav-link border text-dark shadow-sm" id="expense-tab"
+                    data-bs-toggle="tab" data-bs-target="#expense-panel" type="button" role="tab">
+              <i class="bi bi-cart4 me-1"></i> Expenses
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="subcategory-tabs-content">
+
+            <!-- Income Subcategories -->
+            <div class="tab-pane fade show active" id="income-panel" role="tabpanel" aria-labelledby="income-tab">
+
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-success btn-sm rounded-pill shadow-sm px-3 py-1"
+                      data-bs-toggle="modal" data-bs-target="#addIncomeSubCategoryModal">
+                <i class="bi bi-plus-circle me-1"></i> Add
+              </button>
+            </div>
+
+              <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="hidden_type" value="income">
+                <div class="bg-light rounded p-3">
+                  {% for sub in income_subcategories %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                      <div>
+                        <strong>{{ sub.name }}</strong>
+                        <div class="text-muted small">{{ sub.category.name }}</div>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="visible_subcategories"
+                               value="{{ sub.id }}" {% if sub.id not in hidden_income_ids %}checked{% endif %}>
+                      </div>
+                    </div>
+                  {% empty %}
+                    <p class="text-muted text-center mb-0">No income subcategories available.</p>
+                  {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <button type="submit" name="save_hidden" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Apply Changes
+                  </button>
+                  <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+
+                </div>
+              </form>
+            </div>
+
+            <!-- Expense Subcategories -->
+            <div class="tab-pane fade" id="expense-panel" role="tabpanel" aria-labelledby="expense-tab">
+
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-danger btn-sm rounded-pill shadow-sm px-3 py-1"
+                      data-bs-toggle="modal" data-bs-target="#addExpenseSubCategoryModal">
+                <i class="bi bi-plus-circle me-1"></i> Add
+              </button>
+            </div>
+
+
+              <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="hidden_type" value="expense">
+                <div class="bg-light rounded p-3">
+                  {% for sub in expense_subcategories %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                      <div>
+                        <strong>{{ sub.name }}</strong>
+                        <div class="text-muted small">{{ sub.category.name }}</div>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="visible_subcategories"
+                               value="{{ sub.id }}" {% if sub.id not in hidden_expense_ids %}checked{% endif %}>
+                      </div>
+                    </div>
+                  {% empty %}
+                    <p class="text-muted text-center mb-0">No expense subcategories available.</p>
+                  {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <button type="submit" name="save_hidden" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Apply Changes
+                  </button>
+                  <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+
+
+                </div>
+              </form>
+            </div>
+
+          </div> <!-- End tab-content -->
+        </div> <!-- End card-body -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- 🔹 Add Expense Subcategory Modal -->
+<div class="modal fade" id="addExpenseSubCategoryModal" tabindex="-1" aria-labelledby="addExpenseSubCategoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="addExpenseSubcategoryForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addExpenseSubCategoryLabel">Add Expense</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <div class="mb-3">
+          <label class="form-label">Expense Type</label>
+            <select id="newSubcategoryCategory" class="form-select" required>
+              {% for cat in expense_categories %}
+                {% if not cat.is_savings_generated and not cat.is_loan_generated and cat.name != "Investments" %}
+                  <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Expense</label>
+          <input type="text" id="newExpenseSubcategoryName" class="form-control" placeholder="Enter expense name" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- 🔹 Add Income Subcategory Modal -->
+<div class="modal fade" id="addIncomeSubCategoryModal" tabindex="-1" aria-labelledby="addIncomeSubCategoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="addIncomeSubcategoryForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addIncomeSubCategoryLabel">Add Income</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <div class="mb-3">
+          <label class="form-label">Income Type</label>
+            <select id="newSubcategoryCategory" class="form-select" required>
+              {% for cat in income_categories %}
+                {% if cat.name != "Investment Income" %}
+                  <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Income</label>
+          <input type="text" id="newIncomeSubcategoryName" class="form-control" placeholder="Enter income name" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+/* 🔸 Add Expense Subcategory */
+document.getElementById('addExpenseSubcategoryForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('newExpenseSubcategoryName').value.trim();
+  const categoryId = document.getElementById('expenseCategorySelect').value;
+
+  fetch("{% url 'add_subcategory' %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({ name, category_id: categoryId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();  // reload so the new one shows
+    } else {
+      alert(data.error || 'This expense subcategory already exists.');
+    }
+  })
+  .catch(err => console.error("Error adding expense subcategory:", err));
+});
+
+
+/* 🔸 Add Income Subcategory */
+document.getElementById('addIncomeSubcategoryForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('newIncomeSubcategoryName').value.trim();
+  const category = document.getElementById('incomeCategorySelect').value;
+
+  fetch("{% url 'add_income_subcategory' %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: new URLSearchParams({ name, category })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.id) {
+      location.reload();  // refresh to display the new one
+    } else {
+      alert(data.error || 'This income subcategory already exists.');
+    }
+  })
+  .catch(err => console.error("Error adding income subcategory:", err));
+});
+</script>
+
+
+<!-- Popover + Tabs Script -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // --- Popovers ---
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (el) {
+      return new bootstrap.Popover(el);
+    });
+
+    // --- Tab Styling Logic ---
+    const tabs = document.querySelectorAll('#subcategory-tabs .nav-link');
+
+    function activateTab(tab) {
+      tabs.forEach(t => {
+        t.classList.remove('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+        t.classList.add('bg-light', 'text-muted');
+      });
+      tab.classList.add('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      tab.classList.remove('bg-light', 'text-muted');
+    }
+
+    // --- Restore saved tab from localStorage ---
+    const savedTabId = localStorage.getItem('activeSubcategoryTab');
+    if (savedTabId) {
+      const savedTab = document.getElementById(savedTabId);
+      if (savedTab) {
+        const bsTab = new bootstrap.Tab(savedTab);
+        bsTab.show(); // show the saved tab panel
+        activateTab(savedTab);
+      }
+    } else {
+      // Apply initial styling if none saved
+      const activeTab = document.querySelector('#subcategory-tabs .nav-link.active');
+      if (activeTab) activateTab(activeTab);
+    }
+
+    // --- Listen for tab click + save preference ---
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function () {
+        activateTab(this);
+        localStorage.setItem('activeSubcategoryTab', this.id);
+      });
+    });
+  });
+</script>
+
+{% endblock %}

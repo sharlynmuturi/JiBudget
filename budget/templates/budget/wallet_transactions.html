@@ -1,0 +1,39 @@
+<h4 class="mt-5">Wallet Transactions</h4>
+
+<div class="table-responsive shadow-sm mt-3">
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Wallet</th>
+        <th class="text-end">Amount (KES)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in transactions %}
+        <tr>
+          <td>{{ tx.date }}</td>
+          <td>
+            {% if tx.type == 'income' %}
+              <span class="badge bg-success">Income</span>
+            {% else %}
+              <span class="badge bg-danger">Expense</span>
+            {% endif %}
+          </td>
+          <td>{{ tx.description }}</td>
+          <td>{{ tx.wallet.name }}</td>
+          <td class="text-end {% if tx.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+            {% if tx.type == 'income' %}+{% else %}-{% endif %}
+            {{ tx.amount|floatformat:2 }}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">No transactions found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

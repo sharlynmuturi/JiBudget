@@ -1,0 +1,234 @@
+<!-- Wallet Nav Pills -->
+<ul class="nav nav-pills gap-2 mb-4" id="wallet-tab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2"
+            id="summary-tab"
+            data-bs-toggle="pill"
+            data-bs-target="#wallet-summary"
+            type="button"
+            role="tab">
+      <i class="bi bi-wallet2 me-1"></i> Wallet Summary
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link bg-light shadow-sm border fw-semibold text-muted rounded-pill px-3 py-2"
+            id="transactions-tab"
+            data-bs-toggle="pill"
+            data-bs-target="#wallet-transactions"
+            type="button"
+            role="tab">
+      <i class="bi bi-list-ul me-1"></i> Wallet Transactions
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+<div class="tab-pane fade show active" id="wallet-summary" role="tabpanel">
+
+
+<div class="dropdown mb-4">
+  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+    + Reconcile Wallets
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="{% url 'add_wallet_transfer' %}">Transfer between wallets</a></li>
+    <li><a class="dropdown-item" href="{% url 'add_starting_balance' %}">Add to Wallet</a></li>
+  </ul>
+</div>    
+
+
+
+<div class="row mb-4">
+  <div class="col-md-12">
+
+        <div id="walletCards">
+          <div class="card-body">
+            <div class="row g-4">
+              {% for wallet in wallet_data %}
+                <div class="col-sm-6 col-md-6 col-lg-3">
+                  <div class="card shadow-sm border-0 h-100 rounded-4 bg-secondary-subtle">
+                    <div class="card-body p-4 d-flex flex-column justify-content-between">
+                      <!-- Wallet Info -->
+                      <div class="mb-3">
+                        <h5 class="card-title fw-bold fs-5 text-dark mb-3">{{ wallet.name }}</h5>
+        
+                        <p class="mb-2 text-muted">
+                          <i class="bi bi-arrow-down-circle me-1 text-success"></i>Income:
+                          <span class="fw-semibold text-success">KES {{ wallet.income_total|floatformat:2 }}</span>
+                        </p>
+                        <p class="mb-2 text-muted">
+                          <i class="bi bi-arrow-up-circle me-1 text-danger"></i>Expenses:
+                          <span class="fw-semibold text-danger">KES {{ wallet.expense_total|floatformat:2 }}</span>
+                        </p>
+        
+                        <!-- Divider -->
+                        <hr class="my-3 border-dark-subtle">
+        
+                        <p class="mb-2 text-muted">
+                          <i class="bi bi-wallet2 me-1 text-dark"></i>Balance:
+                          <span class="fw-bold {% if wallet.balance < 0 %}text-danger{% else %}text-dark{% endif %}">
+                            KES {{ wallet.balance|floatformat:2 }}
+                          </span>
+                        </p>
+        
+                        {% if wallet.balance < 0 %}
+                          <div class="alert alert-warning mt-3 p-2 small" role="alert">
+                            ⚠️ Negative balance. Review this wallet's transactions to reconcile.
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+
+
+                <div class="col-12">
+                  <div class="alert alert-secondary text-center mt-4">
+                      <i class="bi bi-wallet2 text-secondary fs-2 d-block mb-2"></i>
+                    No wallets with activity to show.
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+
+  </div>
+</div>
+</div>
+
+
+<div class="tab-pane fade" id="wallet-transactions" role="tabpanel">
+    
+<a href="{% url 'add_starting_balance' %}" class="btn btn-sm btn-outline-secondary mb-4">+ Reconcile Wallets</a>
+
+<div class="container-fluid px-3">
+  {% if wallet_data %}
+
+    <!-- Stacked Wallet Buttons -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      {% for wallet in wallet_data %}
+        <button type="button"
+                class="btn btn-outline-secondary rounded-pill px-4 py-2 border-0 wallet-tab {% if forloop.first %}active{% endif %}"
+                data-target="#wallet-{{ forloop.counter }}">
+          {{ wallet.name }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <!-- Wallet Reports -->
+    {% for wallet in wallet_data %}
+      <div class="wallet-report {% if not forloop.first %}d-none{% endif %}" id="wallet-{{ forloop.counter }}">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover small align-middle">
+                <thead class="table-light">
+                  <tr class="align-middle text-nowrap">
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Amount (KES)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% with wallet_name=wallet.name %}
+                    {% for t in transactions %}
+                      {% if t.wallet.name == wallet_name %}
+                        <tr style="line-height: 1.6;">
+                          <td>{{ t.date|date:"M d, Y" }}</td>
+                          <td>
+                            {% if t.type == 'income' %}
+                              <span class="badge bg-success">Income</span>
+                            {% else %}
+                              <span class="badge bg-danger">Expense</span>
+                            {% endif %}
+                          </td>
+                          <td>{{ t.description }}</td>
+                          <td>
+                            {% if t.type == 'income' %}
+                              <span class="text-success fw-bold">KES {{ t.amount|floatformat:2 }}</span>
+                            {% else %}
+                              <span class="text-danger fw-bold">KES -{{ t.amount|floatformat:2 }}</span>
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endif %}
+                    {% empty %}
+                      <tr><td colspan="4" class="text-center text-muted py-3">No transactions found.</td></tr>
+                    {% endfor %}
+                  {% endwith %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-wallet fs-3 mb-2 d-block"></i>
+      <p class="mb-0 fs-5">No wallets found.</p>
+    </div>
+  {% endif %}
+</div>
+</div>
+
+</div>
+
+<!-- JS to switch wallet reports -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = document.querySelectorAll(".wallet-tab");
+    const reports = document.querySelectorAll(".wallet-report");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", function () {
+        // Deactivate all buttons
+        tabButtons.forEach(b => b.classList.remove("active"));
+        // Hide all reports
+        reports.forEach(r => r.classList.add("d-none"));
+
+        // Activate clicked button
+        this.classList.add("active");
+        const targetId = this.getAttribute("data-target");
+        const targetReport = document.querySelector(targetId);
+        if (targetReport) {
+          targetReport.classList.remove("d-none");
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const walletTabs = document.querySelectorAll('#wallet-tab .nav-link');
+
+    walletTabs.forEach(btn => {
+      // Reset all styles
+      btn.classList.remove('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark', 'bg-light', 'text-muted');
+
+      // Add correct styles based on active class
+      if (btn.classList.contains('active')) {
+        btn.classList.add('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      } else {
+        btn.classList.add('bg-light', 'text-muted');
+      }
+
+      // Add click listener to toggle styling on click
+      btn.addEventListener('click', function () {
+        walletTabs.forEach(b => {
+          b.classList.remove('active', 'bg-white', 'text-dark' , 'fw-semibold', 'border', 'border-dark');
+          b.classList.add('bg-light', 'text-muted');
+        });
+
+        this.classList.add('active', 'bg-white', 'text-dark' , 'fw-semibold', 'border', 'border-dark');
+        this.classList.remove('bg-light', 'text-muted');
+      });
+    });
+  });
+</script>
+

@@ -1,0 +1,272 @@
+{% extends 'budget/base.html' %}
+
+{% block title %}Savings Goals{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start">
+  <div>
+    <hr class="mb-0" style="border: none;">
+    <h2 class="mb-1"><i class="bi bi-piggy-bank me-1"></i> Savings Goals</h2>
+    <p class="text-muted">Create a Jar for items you're saving towards</p>
+  </div>
+
+  <hr style="border: none;">
+
+  <div class="text-end">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Savings Jars Pills -->
+<ul class="nav nav-pills gap-2 mb-4" id="jar-tab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link jar-tab active bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+            data-bs-toggle="pill"
+            data-bs-target="#savings-jars"
+            type="button"
+            role="tab">
+      <i class="bi bi-piggy-bank"></i> Savings Jars
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link jar-tab bg-light text-muted rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+            data-bs-toggle="pill"
+            data-bs-target="#savings-transactions"
+            type="button"
+            role="tab">
+      <i class="bi bi-list-ul"></i> Savings History
+    </button>
+  </li>
+</ul>
+
+<a href="{% url 'create_goal' %}" class="btn btn-sm btn-outline-info mb-4">+ Create New Savings Jar</a>
+
+{% if goals %}
+
+<style>
+/* Ribbon Styles */
+.ribbon {
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+
+.ribbon span {
+  position: absolute;
+  display: block;
+  width: 200px;
+  padding: 8px 0;
+  background-color: #198754; /* Bootstrap success green */
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.75rem;
+  transform: rotate(45deg);
+  top: 25px;
+  right: -40px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+</style>
+
+<div class="tab-content">
+<div class="tab-pane fade show active" id="savings-jars" role="tabpanel">
+<div class="row g-4">
+  {% for goal in goals %}
+  <div class="col-sm-6 col-md-6 col-lg-4">
+    <div class="card shadow-sm border-0 h-100 rounded-4 position-relative 
+      {% if goal.saved_so_far >= goal.target_amount %}bg-success-subtle{% else %}bg-info-subtle{% endif %}">
+
+      {% if goal.saved_so_far >= goal.target_amount %}
+        <!-- Ribbon -->
+        <div class="ribbon"><span>Goal Reached</span></div>
+      {% endif %}
+
+      <div class="card-body p-4 d-flex flex-column justify-content-between">
+        
+        <!-- Top Info -->
+        <div class="mb-3">
+          <h5 class="card-title fw-bold text-dark">{{ goal.subcategory }}</h5>
+          <p class="mb-1 text-muted">
+            <i class="bi bi-calendar me-1"></i>Created: 
+            <strong>{{ goal.created_at|date:"M d, Y" }}</strong>
+          </p>
+          <p class="mb-1 text-muted">
+            <i class="bi bi-bullseye me-1"></i>Target: 
+            <strong>KES {{ goal.target_amount|floatformat:2 }}</strong>
+          </p>
+          <p class="mb-1 text-muted">
+            <i class="bi bi-piggy-bank-fill me-1"></i>Saved: 
+            <strong>KES {{ goal.saved_so_far|floatformat:2 }}</strong>
+          </p>
+          <br>
+
+          <!-- Progress Bar -->
+          <div class="progress my-2" style="height: 12px;">
+            <div class="progress-bar 
+              {% if goal.saved_so_far >= goal.target_amount %}bg-success{% else %}bg-info{% endif %}"
+              role="progressbar"
+              style="width: {{ goal.progress|floatformat:0 }}%;"
+              aria-valuenow="{{ goal.progress|floatformat:0 }}"
+              aria-valuemin="0" aria-valuemax="100">
+            </div>
+          </div>
+          <div class="text-end small text-muted">
+            {{ goal.progress|floatformat:1 }}% saved so far
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+          {% if goal.saved_so_far >= goal.target_amount %}
+            <button class="btn btn-sm btn-outline-secondary" disabled>
+              <i class="bi bi-check-circle me-1"></i>Completed
+            </button>
+          {% else %}
+            <a href="{% url 'edit_goal' goal.id %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-plus-circle me-1"></i>Top Up
+            </a>
+          {% endif %}
+          <form method="post" action="{% url 'delete_goal' goal.id %}" onsubmit="return confirm('Are you sure you want to withdraw amount saved in jar?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-cash"></i> Withdraw
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+  <div class="alert alert-info text-center mt-4">
+      <i class="bi bi-info-circle text-secondary fs-2 d-block mb-2"></i>
+    No savings goals yet. Start by creating your first savings jar.
+  </div>
+{% endif %}
+</div>
+
+</div>
+
+<div class="tab-pane fade" id="savings-transactions" role="tabpanel">
+  <div class="container-fluid px-3">
+    {% if savings_data %}
+
+    <!-- Jar Transaction Buttons -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      {% for data in savings_data %}
+        <button type="button"
+                class="btn btn-outline-secondary rounded-pill px-4 py-2 border-0 jar-transaction-btn {% if forloop.first %}active{% endif %}"
+                data-target="#jar-{{ forloop.counter }}">
+          {{ data.goal.subcategory.name }}
+        </button>
+      {% endfor %}
+    </div>
+      <!-- Jar Reports -->
+      {% for data in savings_data %}
+        <div class="jar-report {% if not forloop.first %}d-none{% endif %}" id="jar-{{ forloop.counter }}">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover small align-middle">
+                <thead class="table-light">
+                  <tr class="align-middle text-nowrap">
+                    <th>Date</th>
+                    <th>Wallet</th>
+                    <th>Description</th>
+                    <th>Amount (KES)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in data.transactions %}
+                    <tr style="line-height: 1.6;">
+                      <td>{{ t.date|date:"M d, Y" }}</td>
+                      <td>{{ t.source }}</td>
+                      <td>{{ t.description }}</td>
+                      <td>
+                          <span class="text-success fw-bold">KES {{ t.amount|floatformat:2 }}</span>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">No saving history found for this jar.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+  </div>
+  
+</div>
+
+</div>
+
+<!-- JS to switch savings jar reports -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const jarButtons = document.querySelectorAll(".jar-transaction-btn");
+  const reports = document.querySelectorAll(".jar-report");
+
+  jarButtons.forEach(btn => {
+    btn.addEventListener("click", function () {
+      jarButtons.forEach(b => b.classList.remove("active"));
+      reports.forEach(r => r.classList.add("d-none"));
+
+      this.classList.add("active");
+      const target = document.querySelector(this.dataset.target);
+      if (target) target.classList.remove("d-none");
+    });
+  });
+
+  // Only auto-click the first jar's button when the transactions tab is shown
+  const transactionsTab = document.querySelector('[data-bs-target="#savings-transactions"]');
+  transactionsTab.addEventListener('shown.bs.tab', function () {
+    if (jarButtons.length > 0) {
+      jarButtons[0].click();
+    }
+  });
+});
+</script>
+
+
+
+<!-- JS to style active savings jar pills -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const jarTabs = document.querySelectorAll('#jar-tab .nav-link');
+
+    function applyJarTabStyles() {
+      jarTabs.forEach(btn => {
+        btn.classList.remove('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark', 'bg-light', 'text-muted');
+        if (btn.classList.contains('active')) {
+          btn.classList.add('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+        } else {
+          btn.classList.add('bg-light', 'text-muted');
+        }
+      });
+    }
+
+    // Initial setup
+    applyJarTabStyles();
+
+    // Update on click
+    jarTabs.forEach(btn => {
+      btn.addEventListener('click', applyJarTabStyles);
+    });
+  });
+</script>
+
+{% endblock %}

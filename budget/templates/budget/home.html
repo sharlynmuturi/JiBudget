@@ -1,0 +1,685 @@
+ {% extends 'budget/base.html' %}   
+
+{% load static %}
+
+{% block title %}Welcome to JiBudget{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem; /* smaller text */
+      line-height: 1.7;   /* adjust line height slightly */
+      color: #333;
+      overflow-x: hidden;
+      padding: 0;
+      margin: 0;
+    }
+
+
+
+  .section-spacing {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .sway {
+    animation: sway 6s ease-in-out infinite alternate;
+    display: inline-block;
+  }
+
+  @keyframes sway {
+    0%   { transform: rotate(-1.5deg); }
+    100% { transform: rotate(1.5deg); }
+  }
+
+    .hero-carousel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 110%;
+      width: 110%;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    .hero-carousel .carousel-inner,
+    .hero-carousel .carousel-item,
+    .hero-carousel img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      opacity: 1;
+    }
+
+    
+    @keyframes floatImage {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    
+    /*.hero-section {*/
+    /*  position: relative;*/
+    /*  background-color: transparent;*/
+    /*  background-blend-mode: normal;*/
+    /*  min-height: 70vh;*/
+    /*  display: flex;*/
+    /*  flex-direction: column;*/
+    /*  justify-content: center;*/
+    /*  align-items: center;*/
+    /*  padding: 0;*/
+    /*  margin-top: 0;*/
+    /*  overflow: hidden;*/
+    /*}*/
+    
+    .hero-section {
+      position: relative;
+      background-color: rgba(255, 255, 255, 0.4);
+      background-blend-mode: lighten;
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      margin-top: 0;
+      overflow: hidden;
+    }
+    
+    /* Only apply full-width behavior for unauthenticated users */
+    .hero-fullwidth {
+      width: 100vw;
+      margin: 0 calc(-50vw + 50%);
+    }
+
+
+  h1.display-3 {
+    font-size: 3rem;
+    font-weight: 700;
+  }
+
+  h4.fw-semibold, h5.fw-bold {
+    font-weight: 600;
+    font-size: 1.4rem;
+  }
+
+  .lead, .text-muted, p {
+    font-size: 1.08rem;
+  }
+
+  .blockquote p {
+    font-size: 1.05rem;
+    font-style: italic;
+  }
+
+  .btn-lg {
+    font-size: 1.05rem;
+    padding: 0.7rem 1.4rem;
+  }
+
+  footer {
+    font-size: 0.95rem;
+  }
+
+  .text-uppercase {
+    letter-spacing: 0.5px;
+  }
+
+  .small {
+    font-size: 0.93rem;
+  }
+
+    .install-hero-btn {
+      background-color: #ffffff;
+      color: #212529;
+      border: 2px solid #212529;
+      border-radius: 50px;
+      padding: 18px 48px;
+      font-size: 1.25rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+   
+    .install-hero-btn:hover {
+      transform: scale(1.05);
+      background-color: #f8f9fa;
+      color: #000;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #007bff, #00c6ff);
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease-in-out;
+    }
+    
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #0056b3, #0099cc);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+
+    .feature-card {
+      border-radius: 1rem;
+      border: 1px solid #eee;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    
+    .icon-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      background: rgba(0, 123, 255, 0.1); /* soft background */
+    }
+        
+
+</style>
+
+
+<div class="hero-section text-center {% if not user.is_authenticated %}hero-fullwidth{% endif %} mt-5 pt-5">
+
+  <div id="heroCarousel" class="carousel slide carousel-fade hero-carousel" data-bs-ride="carousel" data-bs-interval="3000">
+    <div class="carousel-inner">
+      <div class="carousel-item active">
+        <img src="{% static 'budget/screenshots/slide1.jpg' %}" class="d-block w-100" alt="Slide 3">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/slide111.jpg' %}" class="d-block w-100" alt="Slide 5">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/slide1111.jpg' %}" class="d-block w-100" alt="Slide 4">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/slide.jpg' %}" class="d-block w-100" alt="Slide 5">
+      </div>
+    </div>
+  </div>
+
+  
+
+  <h1 class="display-3 fw-bold text-primary">Welcome to <span class="text-dark">JiBudget</span></h1>
+  <p class="lead mt-3 text-muted fs-5">
+    Your personal budgeting and expense tracking assistant – built with Kenyan earners in mind.
+  </p>
+  <div class="mt-4">
+    {% if not user.is_authenticated %}
+      <a href="{% url 'signup' %}" class="btn btn-outline-primary btn-lg me-2">Create Account</a>
+      <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Log In</a>
+    {% else %}
+      <a href="{% url 'my_dashboard' %}" class="btn btn-success btn-lg">Go to Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+
+<br>
+
+<div class="container text-center py-4" data-aos="fade-up" data-aos-duration="900">
+  <h4 class="fw-semibold">What is JiBudget?</h4>
+  <p class="text-muted mx-auto" style="max-width: 720px;">
+     JiBudget is a smart budgeting app built for all income types. Whether you earn daily, weekly, or monthly, it helps you track income, manage spending, and stay intentional with your money - across all your wallets, all in one place.
+  </p>
+</div>
+
+<div class="container section-spacing px-1" style="max-width: 960px;">
+    
+  <div id="jibudgetCarousel" class="carousel slide ratio ratio-16x9 rounded overflow-hidden" data-bs-ride="carousel" data-bs-interval="5000">
+    <div class="carousel-inner">
+      <div class="carousel-item active">
+        <img src="{% static 'budget/screenshots/mydashboard11.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Dashboard">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/mytransactions13.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Transactions">
+      </div>
+      <!--<div class="carousel-item">-->
+      <!--  <img src="{% static 'budget/screenshots/mybudgets8.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Budgets">-->
+      <!--</div>-->
+      <!--<div class="carousel-item">-->
+      <!--  <img src="{% static 'budget/screenshots/mywallets5.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Wallets">-->
+      <!--</div>-->
+      <!--<div class="carousel-item">-->
+      <!--  <img src="{% static 'budget/screenshots/mysavings4.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Savings">-->
+      <!--</div>-->
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/myloans2.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Reports">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/myinvestment1.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Invest">
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'budget/screenshots/myvitals5.png' %}" class="d-block w-100 h-100 object-fit-cover" alt="Reports">
+      </div>
+      
+
+    </div>
+
+    
+    <button class="carousel-control-prev" type="button" data-bs-target="#jibudgetCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#jibudgetCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    </button>
+  </div>
+</div>
+
+
+<div class="container-fluid px-1">
+    
+
+
+<!-- HOW IT WORKS / FEATURES -->
+<!--<div class="py-5 section-spacing" data-aos="fade-up">-->
+<!--  <div class="container" style="max-width: 880px;">-->
+<!--    <div class="text-center mb-5">-->
+<!--      <h6 class="text-uppercase small mb-2">How It Works</h6>-->
+<!--      <h2 class="fw-bold mb-3">Budget smarter, spend intentionally</h2>-->
+<!--      <p class="text-muted mx-auto" style="max-width: 650px;">-->
+<!--        JiBudget helps you assign every shilling a purpose, track your spending, monitor your financial health, and make smarter choices.-->
+<!--      </p>-->
+<!--    </div>-->
+
+<!--    <div class="row g-4">-->
+      <!-- Feature 1 -->
+<!--      <div class="col-md-6">-->
+<!--        <div class="d-flex align-items-start p-3 bg-transparent border rounded shadow-sm h-100">-->
+<!--          <i class="bi bi-check-circle-fill text-primary fs-3 me-3"></i>-->
+<!--          <div>-->
+<!--            <p class="fw-semibold mb-1">Assign a task to every shilling</p>-->
+<!--            <p class="text-muted small mb-0">-->
+<!--              Set categories, monthly limits, and log expenses as they happen. JiBudget tracks progress automatically and provides insights into your spending habits.-->
+<!--            </p>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+
+      <!-- Feature 3 -->
+<!--      <div class="col-md-6">-->
+<!--        <div class="d-flex align-items-start p-3 bg-transparent border rounded shadow-sm h-100">-->
+<!--          <i class="bi bi-wallet2 text-warning fs-3 me-3"></i>-->
+<!--          <div>-->
+<!--            <p class="fw-semibold mb-1">Log your income, record and review your spending</p>-->
+<!--            <p class="text-muted small mb-0">-->
+<!--              Get a clear view of what you earn, spend, and when, all in one searchable, up-to-date place.-->
+<!--            </p>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+      <!-- Feature 4 -->
+<!--      <div class="col-md-6">-->
+<!--        <div class="d-flex align-items-start p-3 bg-transparent border rounded shadow-sm h-100">-->
+<!--          <i class="bi bi-heart-pulse text-danger fs-3 me-3"></i>-->
+<!--          <div>-->
+<!--            <p class="fw-semibold mb-1">Keep your financial health in check</p>-->
+<!--            <p class="text-muted small mb-0">-->
+<!--              Track how long your money lasts, what’s available, and if your spending matches your income.-->
+<!--            </p>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+      <!-- Feature 5 -->
+<!--      <div class="col-md-6">-->
+<!--        <div class="d-flex align-items-start p-3 bg-transparent border rounded shadow-sm h-100">-->
+<!--          <i class="bi bi-bank text-primary fs-3 me-3"></i>-->
+<!--          <div>-->
+<!--            <p class="fw-semibold mb-1">Got loans?</p>-->
+<!--            <p class="text-muted small mb-0">-->
+<!--              Track payments, experiment with extra contributions, and see interest savings.-->
+<!--            </p>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+
+
+
+
+<div class="py-5 section-spacing" style="background-color: #f9f9f9;" data-aos="zoom-in" data-aos-delay="150">
+  <div class="container" style="max-width: 880px;">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold mb-3">Money made simple, for everyone</h2>
+    </div>
+    <p class="text-start text-muted fs-5 mx-auto" style="max-width: 700px;">
+      Good money management shouldn’t be complicated.  
+      That's why JiBudget makes it simple, visual, and personal - so you can budget with ease,  
+      stay on track, and feel confident about your financial future.
+    </p>
+  </div>
+</div>
+
+
+<div class="text-center my-5">
+  <button class="btn btn-gradient px-5 py-3 rounded-pill shadow-sm"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#featuresSection"
+          aria-expanded="false"
+          aria-controls="featuresSection">
+    <i class="bi bi-stars me-2"></i> View Features
+  </button>
+</div>
+
+
+
+<div class="collapse" id="featuresSection">
+<!-- TRANSACTIONS -->
+<div class="py-5 section-spacing" style="background-color: #f9f9f9;">
+  <div class="container" style="max-width: 1140px;">
+    <div class="row align-items-center">
+      <div class="col-6">
+        <p class="text-uppercase text-muted small mb-1">Transactions</p>
+        <h5 class="fw-bold">Record and review your spending</h5>
+        <p class="text-muted">Get a clear view of what you earn, spend, and when, all in one searchable, up-to-date place. Record your recurring transactions in a single click. Bring your finances to life with clear, beautiful charts.</p>
+        <!--<img src="{% static 'budget/screenshots/transactionshome4.png' %}" class="img-fluid rounded mt-4 sway" alt="Transactions Details">-->
+      </div>
+      <div class="col-6">
+        <img src="{% static 'budget/screenshots/transactionshome1.png' %}" class="img-fluid rounded sway" alt="Transactions Page"> 
+      </div>        
+    </div>
+  </div>
+</div>
+
+
+  <div class="py-5 section-spacing bg-white">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row align-items-center">
+        <div class="col-6">
+          <p class="text-uppercase text-muted small mb-1">Budgets</p>
+          <h5 class="fw-bold">Plan ahead for smarter spending</h5>
+          <p class="text-muted">Set monthly budgets for your spending categories, log expenses as they happen. JiBudget tracks progress automatically.  Easily create this month’s budget by reusing previous months'.</p>
+          <!--<img src="{% static 'budget/screenshots/budgetshome2.png' %}" class="img-fluid rounded mt-4 sway" alt="Dashboard Thumbnail">-->
+        </div>
+        <div class="col-6">
+          <img src="{% static 'budget/screenshots/budgetstour2.png' %}" class="img-fluid rounded sway" alt="Budgets">
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="py-5 section-spacing bg-white">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row align-items-center">
+        <div class="col-6 order-md-2">
+          <p class="text-uppercase text-muted small mb-1">Wallets</p>
+          <h5 class="fw-bold">See where your money lives</h5>
+          <p class="text-muted">Whether it’s cash, mobile money, or bank accounts. Log every transaction to the right wallet and get a clear view of what’s come in, what’s gone out, and what’s left.</p>
+        </div>
+        <div class="col-6 order-md-1">
+          <img src="{% static 'budget/screenshots/wallets111.png' %}" class="img-fluid rounded w-100 sway" alt="Wallets">
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!--<div class="py-5 section-spacing" style="background-color: #f9f9f9;">-->
+  <!--  <div class="container" style="max-width: 1140px;">-->
+  <!--    <div class="row align-items-center">-->
+  <!--      <div class="col-md-6 order-md-2">-->
+  <!--        <img src="{% static 'budget/screenshots/savingstour6.png' %}" class="img-fluid rounded w-100 sway" alt="Savings Goals">-->
+          <!--<img src="{% static 'budget/screenshots/savingsphone10.png' %}" class="img-fluid rounded w-100 sway" alt="Savings Goals">-->
+  <!--      </div>-->
+  <!--      <div class="col-md-6 order-md-1">-->
+  <!--        <p class="text-uppercase text-muted small mb-1">Savings Goals</p>-->
+  <!--        <h5 class="fw-bold">Track your progress with purpose</h5>-->
+  <!--        <p class="text-muted">Setting aside funds for school fees, a new phone, or that holiday? Log each deposit as you save and watch your progress build over time.</p>-->
+  <!--      </div>-->
+  <!--    </div>-->
+  <!--  </div>-->
+  <!--</div>-->
+
+
+  <div class="py-5 section-spacing"  style="background-color: #f9f9f9;">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row align-items-center">
+        <div class="col-6">
+          <img src="{% static 'budget/screenshots/loantour.png' %}" class="img-fluid rounded mb-3 sway" alt="Reports Secondary">
+        </div>
+        <div class="col-6">
+          <p class="text-uppercase text-muted small mb-1">Loan Payoff simulator</p>
+          <h5 class="fw-bold">Stay on Top of Your Borrowing</h5>
+          <p class="text-muted">
+              Keep track of all your loans in one place. See what’s left to pay, and explore simulations to see how extra payments can help you save time and interest.
+        </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="py-5 section-spacing"  style="background-color: #f9f9f9;">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row align-items-center">
+        <div class="col-6">
+          <img src="{% static 'budget/screenshots/investmenthome.png' %}" class="img-fluid rounded mb-3 sway" alt="Reports Secondary">
+        </div>
+        <div class="col-6">
+          <p class="text-uppercase text-muted small mb-1">Investments</p>
+          <h5 class="fw-bold">Track Your Investment Portfolio</h5>
+          <p class="text-muted">
+            Keep tabs on all your investments - chamas, SACCOs, MMF, stocks, and more, all in one place. 
+            See the latest stock prices, watch interactive charts, and know exactly how your funds are performing. 
+            Stay informed, make smarter decisions, and grow your wealth with ease.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="py-5 section-spacing bg-white">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row align-items-center">
+        <div class="col-6 order-md-2">
+          <img src="{% static 'budget/screenshots/vitalshome1.png' %}" class="img-fluid rounded w-100 sway" alt="Savings Goals">
+        </div>
+        <div class="col-6 order-md-1">
+          <p class="text-uppercase text-muted small mb-1">Money Vitals</p>
+          <h5 class="fw-bold">Your Financial Health Check</h5>
+          <p class="text-muted">Get a quick read on your financial health - how long your money can last, how much is liquid, and whether your spending matches your income. Record every income and expense as it happens for the clearest picture.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<!-- WHO IT'S FOR -->
+<div class="py-5 section-spacing" data-aos="fade-up">
+  <div class="container" style="max-width: 880px;">
+    <div class="text-center mb-5">
+      <h6 class="text-uppercase small mb-2">Who It's For</h6>
+      <h2 class="fw-bold mb-3">Simple, clear money control for anyone</h2>
+    </div>
+    
+    <div class="row text-center">
+      <div class= "feature-card col-4 mb-3">
+          <i class="bi bi-mortarboard-fill text-primary fs-2 mb-2"></i>
+          <h6 class="fw-semibold">Students</h6>
+          <p class="text-muted small">Track allowances and daily spending with clarity.</p>
+      </div>
+
+      <div class="feature-card col-4 mb-3">
+          <i class="bi bi-briefcase-fill text-success fs-2 mb-2"></i>
+          <h6 class="fw-semibold">Earners</h6>
+          <p class="text-muted small">Plan budgets and manage income efficiently.</p>
+      </div>
+
+      <div class="feature-card col-4 mb-3">
+          <i class="bi bi-lightbulb-fill text-secondary fs-2 mb-2"></i>
+          <h6 class="fw-semibold">New to budgeting</h6>
+          <p class="text-muted small">Simple, visual tools for effortless money control.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container section-spacing px-3" style="max-width: 800px;" data-aos="zoom-in" data-aos-duration="800">
+  <div class="p-5 bg-gradient rounded-4" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); box-shadow: 0 8px 20px rgba(0,0,0,0.05); position: relative;">
+    <i class="bi bi-quote text-primary display-1 position-absolute top-0 start-0 translate-middle opacity-10"></i>
+    <blockquote class="blockquote mb-0 text-center">
+      <p class="fs-5 fst-italic text-secondary">
+        "I built JiBudget because I was tired of my money disappearing before the month did.  
+        Hope it brings you the clarity and control you deserve. Enjoy!"
+      </p>
+      <footer class="blockquote-footer mt-4 fw-semibold" style="font-family: 'Segoe Script', cursive; color:#4a4a4a;">
+        Sharlyn M.
+      </footer>
+    </blockquote>
+  </div>
+</div>
+
+
+</div>
+
+<div class="container section-spacing px-3" style="max-width: 1140px;">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">Why <span class="text-primary">JiBudget?</span></h2>
+    <p class="text-muted">Simple. Secure. Smart money management for everyone.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-3">
+      <div class="feature-card h-100 text-center p-4">
+        <div class="icon-box text-primary mb-3">
+          <i class="bi bi-phone fs-1"></i>
+        </div>
+        <h6 class="fw-semibold">Mobile-Friendly</h6>
+        <p class="text-muted small">Access anywhere, even on the go.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="feature-card h-100 text-center p-4">
+        <div class="icon-box text-success mb-3">
+          <i class="bi bi-pencil-square fs-1"></i>
+        </div>
+        <h6 class="fw-semibold">Fully Customizable</h6>
+        <p class="text-muted small">Create and personalize wallets, income, expense, and savings categories. Track your money your way.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="feature-card h-100 text-center p-4">
+        <div class="icon-box text-warning mb-3">
+          <i class="bi bi-shield-lock fs-1"></i>
+        </div>
+        <h6 class="fw-semibold">Secure & Intentional</h6>
+        <p class="text-muted small">No account linking. Log transactions as they happen — simple, private, intentional.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="feature-card h-100 text-center p-4">
+        <div class="icon-box text-danger mb-3">
+          <i class="bi bi-lightning-charge fs-1"></i>
+        </div>
+        <h6 class="fw-semibold">Quick Setup</h6>
+        <p class="text-muted small">Get started in under a minute.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!--<div class="container section-spacing px-3" style="max-width: 800px;" data-aos="zoom-in" data-aos-duration="800">-->
+<!--  <div class="p-5 bg-gradient rounded-4" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); box-shadow: 0 8px 20px rgba(0,0,0,0.05); position: relative;">-->
+<!--    <i class="bi bi-quote text-primary display-1 position-absolute top-0 start-0 translate-middle opacity-10"></i>-->
+<!--    <blockquote class="blockquote mb-0 text-center">-->
+<!--      <p class="fs-5 fst-italic text-secondary">-->
+<!--        "No more treating your wallet like a crime scene. You deserve to feel good about where your money goes."-->
+<!--      </p>-->
+<!--      <footer class="blockquote-footer mt-4 fw-semibold" style="font-family: 'Segoe Script', cursive; color:#4a4a4a;">-->
+<!--        Sharlyn M.-->
+<!--      </footer>-->
+<!--    </blockquote>-->
+<!--  </div>-->
+<!--</div>-->
+
+
+<button id="install-btn-floating"
+        class="btn btn-primary shadow-lg position-fixed align-items-center gap-2 px-3 py-2 rounded-pill"
+        style="bottom: 20px; right: 20px; z-index: 1050; display: none; font-size: 0.9rem;">
+  <i class="bi bi-download"></i>
+  Get the App
+</button>
+
+
+<footer class="bg-light text-muted py-1">
+  <div class="container" style="max-width: 1140px;">
+    <div class="row text-center text-md-start align-items-start">
+
+      <div class="col-md-6 mb-3 mb-md-0">
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-start">
+          <img src="{% static 'budget/screenshots/logoicon.ico' %}" alt="Logo" width="24" height="24" class="mb-1 mb-md-0 me-0 me-md-2">
+          <h6 class="fw-bold text-dark mb-0">JiBudget</h6>
+        </div>
+        <p class="small mb-0 mt-2 mt-md-1">
+          A smart budgeting tool that fits your life - helping you stay on top of your income, spending, savings goals, and loans.
+        </p>
+      </div>
+
+      <div class="col-md-3 offset-md-3">
+        <h6 class="text-dark fw-semibold mb-2 text-center text-md-start">Quick Links</h6>
+        <ul class="list-unstyled small text-center text-md-start">
+          {% if not user.is_authenticated %}
+            <li><a href="{% url 'contact' %}" class="text-muted text-decoration-none">Get in Touch</a></li>
+            <li><a href="{% url 'login' %}" class="text-muted text-decoration-none">Log In</a></li>
+            <li><a href="{% url 'signup' %}" class="text-muted text-decoration-none">Create Account</a></li>
+          {% else %}
+            <li><a href="{% url 'contact' %}" class="text-muted text-decoration-none">Get in Touch</a></li>
+            <li><a href="{% url 'my_dashboard' %}" class="text-muted text-decoration-none">Dashboard</a></li>
+            <li><a href="{% url 'logout' %}" class="text-muted text-decoration-none">Log Out</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-3 small text-muted">
+    &copy; {{ now|date:"Y" }} JiBudget. All rights reserved.
+  </div>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,    // animation speed
+    once: true        // animate only once
+  });
+</script>
+
+
+{% endblock %}

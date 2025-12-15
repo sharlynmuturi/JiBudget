@@ -1,0 +1,1438 @@
+{% extends "budget/base.html" %}
+{% load static %}
+
+{% block title %}My Investment Portfolio{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+  <hr class="mb-0" style="border: none;">
+
+  <div class="d-flex align-items-center">
+    <h2 class="mb-1 d-flex align-items-center">
+      <i class="bi bi-graph-up-arrow me-2"></i> Portfolio Dashboard
+    </h2>
+
+    <!-- Info icon with popover -->
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 p-0" 
+            tabindex="0"
+            data-bs-toggle="popover" 
+            data-bs-trigger="focus" 
+            data-bs-placement="right" 
+            data-bs-html="true"
+            title="Understanding Your Assets"
+            data-bs-content="
+              <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                  <li><strong>SACCOs / Chamas</strong> - Open a SACCO/Chama account in the app, record your contributions, and track dividends or returns over time.</li>
+                  <li><strong>Stocks / ETF / Crypto</strong> – Create an account in listed companies. Fetch live prices in app, record buys, sells, and dividends to see performance.</li>
+                  <li><strong>Bonds</strong> - Add a bond investment, enter purchase details, maturity date, and coupon payments to monitor interest earned.</li>
+                  <li><strong>Money Market</strong> - Set up a money market account, log deposits and withdrawals, and track interest earned automatically.</li>
+                  <li><strong>Real Estate / Property</strong> - Add a property record, input rental income and expenses, and update valuations to calculate ROI.</li>
+                  <li><strong>Other Assets</strong> - Create custom accounts for businesses, collectibles, or any investment you want to track.</li>
+                  <li><em>Record your transactions, view charts and insights on how portfolio is growing.</em></li>           
+              </ul>
+            ">
+      <i class="bi bi-question-circle fs-4"></i>
+    </button>
+  </div>
+
+  <p class="text-muted">Track your investments, growth, and asset performance.</p>
+    <a href="{% url 'add_investment_account' %}" class="btn btn-sm btn-outline-primary mb-3">+ Add Investment</a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  popoverTriggerList.forEach(function (popoverTriggerEl) {
+    new bootstrap.Popover(popoverTriggerEl)
+  })
+});
+</script>
+
+<div class="d-flex justify-content-start mb-3">
+<a href="{% url 'update_prices' %}" 
+   class="btn btn-primary rounded-4 d-inline-flex align-items-center px-2 px-sm-3 py-1"
+   data-bs-toggle="tooltip" 
+   data-bs-placement="top"
+   title="Click to fetch the latest prices for stock, crypto, and Exchange Traded Fund (ETF)"
+   id="fetchPricesBtn">
+  <i class="bi bi-arrow-clockwise me-1" id="fetchIcon"></i>
+  <span class="d-none d-sm-inline">Fetch Live Prices</span>
+  <span class="d-inline d-sm-none">Fetch Prices</span>
+</a>
+
+</div>
+
+</div>
+
+
+
+<div class="nav nav-pills flex-wrap gap-2 mb-3" id="portfolioTabs" role="tablist">
+
+  <!-- Summary & Analytics -->
+  <button class="nav-link border text-dark shadow-sm active rounded-pill" id="summary-tab"
+          data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">
+    <i class="bi bi-list-check me-1"></i> Investment Summary
+  </button>
+
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="charts-tab"
+          data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab">
+    <i class="bi bi-bar-chart-line me-1"></i> Analytics
+  </button>
+
+  <!-- Portfolio Assets -->
+  <div class="w-100 mt-3 mb-2 fw-bold small text-secondary">Portfolio</div>
+  {% if "sacco" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="sacco-tab"
+          data-bs-toggle="tab" data-bs-target="#sacco" type="button" role="tab">
+    <i class="bi bi-people me-1"></i> SACCOs & Chama
+  </button>
+  {% endif %}
+
+  {% if "mmf" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="mmf-tab"
+          data-bs-toggle="tab" data-bs-target="#mmf" type="button" role="tab">
+    <i class="bi bi-cash-stack me-1"></i> MMF
+  </button>
+  {% endif %}
+
+  {% if "stock" in existing_asset_types or "crypto" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="stocks-tab"
+          data-bs-toggle="tab" data-bs-target="#stocks" type="button" role="tab">
+    <i class="bi bi-graph-up me-1"></i> Stocks, ETFs & Crypto
+  </button>
+  {% endif %}
+
+  {% if "bond" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="bonds-tab"
+          data-bs-toggle="tab" data-bs-target="#bonds" type="button" role="tab">
+    <i class="bi bi-building me-1"></i> Bonds
+  </button>
+  {% endif %}
+
+  {% if "real_estate" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="real-estate-tab"
+          data-bs-toggle="tab" data-bs-target="#real_estate" type="button" role="tab">
+    <i class="bi bi-house-door me-1"></i> Real Estate
+  </button>
+  {% endif %}
+
+  {% if "other" in existing_asset_types %}
+  <button class="nav-link border text-dark shadow-sm rounded-pill" id="other-tab"
+          data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">
+    <i class="bi bi-box-seam me-1"></i> Others
+  </button>
+  {% endif %}
+
+</div>
+
+
+
+<div class="text-end">
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show w-auto d-inline-block" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+</div>
+
+
+<div class="tab-content mt-3">
+
+<div class="tab-pane fade show active" id="summary">
+
+
+<!-- Top Summary Row with Icons -->
+<div class="row mb-4 text-center g-3">
+  
+  <!-- Total Invested -->
+  <div class="col-md-3 col-6">
+    <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+      <i class="bi bi-wallet2 fs-2 mb-2 text-primary"></i>
+      <h6 class="text-muted mb-1">Total Amount Invested</h6>
+      <h5 class="fw-bold">{{ total_invested|floatformat:2 }} {{ base_currency }}</h5>
+    </div>
+  </div>
+
+  <!-- Current Value -->
+  <div class="col-md-3 col-6">
+    <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+      <i class="bi bi-currency-exchange fs-2 mb-2 text-success"></i>
+      <h6 class="text-muted mb-1">Market Value of Investments</h6>
+      <h5 class="fw-bold">{{ total_current_value|floatformat:2 }} {{ base_currency }}</h5>
+    </div>
+  </div>
+
+  <!-- Net Gain/Loss -->
+  <div class="col-md-3 col-6">
+    <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+      <i class="bi bi-graph-up-arrow fs-2 mb-2 {% if total_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+      <h6 class="text-muted mb-1">Net Gain/Loss</h6>
+      <h5 class="fw-bold {% if total_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ total_gain_loss|floatformat:2 }} {{ base_currency }}
+        <!--<small>({{ total_pct_gain|floatformat:2 }}%)</small>-->
+      </h5>
+    </div>
+  </div>
+
+  <!-- ROI -->
+  <div class="col-md-3 col-6">
+    <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+      <i class="bi bi-trophy fs-2 mb-2 {% if total_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+      <h6 class="text-muted mb-1">ROI</h6>
+      <h5 class="fw-bold {% if total_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ total_pct_gain|floatformat:2 }}%
+      </h5>
+    </div>
+  </div>
+
+</div>
+
+
+
+</div>
+
+<!-- Stocks / ETFs / Crypto -->
+<div class="tab-pane fade show" id="stocks">
+
+<!-- Stocks / ETFs / Crypto Summary -->
+<div class="card bg-transparent border-0 rounded-4 mb-3">
+  <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-graph-up fs-5 me-2"></i>Stocks, ETFs & Crypto Summary</span>
+    <button class="btn btn-primary btn-md fw-semibold shadow-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#stocksDetails" 
+            aria-expanded="false" 
+            aria-controls="stocksDetails">
+      <i class="bi bi-eye me-1"></i> See Portfolio
+    </button>
+
+  </div>
+
+  <div class="card-body">
+    <div class="row text-center g-3">
+
+      <!-- Total Invested -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+          <div class="fw-semibold">Total Invested</div>
+          <div class="fs-6 fw-bold">{{ total_stock_invested|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Current Value -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-currency-exchange fs-3 mb-1 text-success"></i>
+          <div class="fw-semibold">Current Value of Investment</div>
+          <div class="fs-6 fw-bold">{{ total_stock_value|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- % Gain/Loss -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-arrow-up-right-circle fs-3 mb-1 {% if total_stock_pct_gain >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+          <div class="fw-semibold">% Gain/Loss</div>
+          <div class="fs-6 fw-bold {% if total_stock_pct_gain >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ total_stock_pct_gain|floatformat:2 }}%
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Return -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-cash-stack fs-3 mb-1 {% if total_return >= 0 %}text-success{% else %}text-warning{% endif %}"></i>
+          <div class="fw-semibold">Total Return</div>
+          <div class="fs-6 fw-bold {% if total_return >= 0 %}text-success{% else %}text-warning{% endif %}">
+            {{ total_return|floatformat:2 }} {{ base_currency }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="stocksDetails">
+<div class="row g-4">
+  {% for p in portfolio_data %}
+    {% if p.account.asset_type in "stock crypto etf" %}
+ <div class="col-lg-4 col-md-6"> 
+  <div class="card shadow-sm border-0 rounded-4 h-100">
+
+    <!-- Header -->
+    <!-- Header --> 
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-3">
+      
+      <!-- Left: Account Name & Symbol -->
+      <div class="d-flex align-items-center">
+        <i class="bi bi-pie-chart-fill me-2 fs-5"></i>
+        <span class="fw-bold">{{ p.account.name }}</span>
+        <small class="ms-2 text-light fst-italic">({{ p.account.symbol|default:"—" }})</small>
+      </div>
+
+      <!-- Center: Latest Price + Fetch -->
+      <div class="text-center flex-grow-1">
+        <span class="fw-semibold">Last Fetched:</span> 
+        <span class="fw-bold">{{ p.current_price|floatformat:2 }} {{ p.currency }}</span> 
+        <small class="text-light">/ unit</small>
+        
+      <!-- Fetch All Prices Button -->
+      <a href="{% url 'update_prices' %}" 
+         class="btn btn-sm btn-outline-light ms-2 py-0 px-2 rounded-pill shadow-sm" 
+         title="Fetch latest prices">
+        <i class="bi bi-arrow-repeat"></i>
+      </a>
+
+      </div>
+
+      <!-- Right: Dropdown -->
+      <div class="dropdown ms-2">
+        <button class="btn btn-sm btn-light rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" 
+                type="button" 
+                style="width: 30px; height: 30px;" 
+                id="dropdownMenuButton{{ p.account.id }}" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false">
+          <i class="bi bi-three-dots-vertical text-primary"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+              <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this investment account?');">
+                <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <!-- Body -->
+    <div class="card-body">
+      <dl class="row mb-0">
+
+        <dt class="col-6 text-muted small">No. of Shares Held</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.units|floatformat:2 }} Unit(s)</dd>
+
+        <dt class="col-6 text-muted small">Current Value of Investment</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Total Amount Invested</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Recorded Dividends</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.dividends|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Yield</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.dividend_yield|floatformat:2 }}%</dd>
+
+        <!--<dt class="col-6 text-muted small">Total Return</dt>-->
+        <!--<dd class="col-6 fw-semibold mb-2 {% if p.total_return >= 0 %}text-success{% else %}text-danger{% endif %}">-->
+        <!--  {{ p.total_return|floatformat:2 }} {{ p.currency }} ({{ p.pct_gain_loss|floatformat:2 }}%)-->
+        <!--</dd>-->
+
+        <dt class="col-6 text-muted small">Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.gain_loss|floatformat:2 }} {{ p.currency }} ({{ p.pct_gain_loss|floatformat:2 }}%)
+        </dd>
+
+        <dt class="col-6 text-muted small">Realized Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.realized_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.realized_gain_loss|floatformat:2 }} {{ p.currency }}
+        </dd>
+
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+
+  </div>
+</div>
+
+
+
+<!-- Bonds -->
+<div class="tab-pane fade" id="bonds">
+<!-- Bonds Summary -->
+<div class="card bg-transparent border-0 rounded-4 mb-3">
+  <!-- Summary Header -->
+  <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-file-earmark-text fs-5 me-2"></i>Bonds Summary</span>
+    <button class="btn btn-success btn-md fw-semibold shadow-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#bondDetails" 
+            aria-expanded="false" 
+            aria-controls="bondDetails">
+      <i class="bi bi-eye me-1"></i> See Portfolio
+    </button>
+
+  </div>
+
+  <!-- Summary Section -->
+  <div class="card-body">
+    <div class="row text-center g-3">
+
+      <!-- Total Invested -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+          <div class="fw-semibold">Total Invested</div>
+          <div class="fs-6 fw-bold">{{ total_bond_invested|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Gain/Loss -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-arrow-up-right-circle fs-3 mb-1 {% if total_bond_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+          <div class="fw-semibold">Gain/Loss</div>
+          <div class="fs-6 fw-bold {% if total_bond_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ total_bond_gain_loss|floatformat:2 }} {{ base_currency }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Accrued Interest -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-pie-chart fs-3 mb-1 text-warning"></i>
+          <div class="fw-semibold">Accrued Interest</div>
+          <div class="fs-6 fw-bold">{{ total_bond_accrued_interest|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Projected Interest -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-calendar2-check fs-3 mb-1 text-info"></i>
+          <div class="fw-semibold">Projected Interest</div>
+          <div class="fs-6 fw-bold">{{ total_bond_projected_interest|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="bondDetails">
+<div class="row g-4">
+  {% for p in portfolio_data %}
+    {% if p.account.asset_type == "bond" %}
+<div class="col-lg-4 col-md-6">
+  <div class="card shadow-sm border-0 rounded-4 h-100">
+
+    <!-- Header -->
+    <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <span><i class="bi bi-building me-1"></i> {{ p.account.name }}</span>
+        {% if p.account.is_callable %}
+          <span class="badge bg-warning text-dark ms-1" title="Callable before maturity">Callable</span>
+        {% endif %}
+      </div>
+
+      <!-- Actions Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-light rounded-circle p-0" type="button"
+                style="width: 28px; height: 28px;" 
+                id="dropdownMenuButton{{ p.account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+              <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'update_investment_account' p.account.id %}">
+              <i class="bi bi-pencil-square me-2 text-warning"></i> Edit
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this investment account?');">
+                <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-6 text-muted small">No. of Bonds Held</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.units|floatformat:2 }} Unit(s)</dd>
+
+        <dt class="col-6 text-muted small">Current Value Per Bond</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.account.face_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Total Amount Invested</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Current Value of Investment</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Annual Coupon Rate</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.account.coupon_rate|default:"0" }}%</dd>
+
+        <dt class="col-6 text-muted small">Dividend</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.coupon_payment|floatformat:2 }} {{ p.currency }} {{ p.account.interest_frequency|default:"N/A" }}</dd>
+
+
+        <dt class="col-6 text-muted small">Bond Issue Date</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.account.issue_date|date:"M d, Y" }}</dd>
+
+        <dt class="col-6 text-muted small">Bond Maturity Date</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.account.maturity_date|date:"M d, Y" }}</dd>
+
+<!--         <dt class="col-6 text-muted small">Total Interest Expected</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.expected_interest|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Accrued Interest</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.accrued_interest|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Projected Interest</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.projected_interest|floatformat:2 }} {{ p.currency }}</dd> -->
+
+<!--         <dt class="col-6 text-muted small">Recorded Interest</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.interest|floatformat:2 }} {{ p.currency }}</dd> -->
+
+        <dt class="col-6 text-muted small">Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.gain_loss|floatformat:2 }} {{ p.currency }}
+        </dd>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+
+  </div>
+</div>
+
+
+
+<!-- MMF -->
+<div class="tab-pane fade" id="mmf">
+
+<!-- MMF Summary -->
+<div class="card bg-transparent border-0 rounded-4 mb-3">
+  <!-- Summary Header -->
+  <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-piggy-bank fs-5 me-2"></i>MMF Summary</span>
+
+    <button class="btn btn-info btn-md fw-semibold shadow-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#mmfDetails" 
+            aria-expanded="false" 
+            aria-controls="mmfDetails">
+      <i class="bi bi-eye me-1"></i> See Portfolio
+    </button>
+
+  </div>
+
+  <!-- Summary Section -->
+  <div class="card-body">
+    <div class="row text-center g-3">
+
+      <!-- Total Invested -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+          <div class="fw-semibold">Total Invested</div>
+          <div class="fs-6 fw-bold">{{ total_mmf_invested|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Current Value -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-cash-stack fs-3 mb-1 text-success"></i>
+          <div class="fw-semibold">Current Value of Investment</div>
+          <div class="fs-6 fw-bold">{{ total_mmf_value|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Accrued Interest -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-pie-chart fs-3 mb-1 text-warning"></i>
+          <div class="fw-semibold">Accrued Interest</div>
+          <div class="fs-6 fw-bold">{{ total_mmf_accrued|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Gain/Loss -->
+      <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-arrow-up-right-circle fs-3 mb-1 {% if total_mmf_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+          <div class="fw-semibold">Gain/Loss</div>
+          <div class="fs-6 fw-bold {% if total_mmf_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ total_mmf_gain_loss|floatformat:2 }} {{ base_currency }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="mmfDetails">
+<div class="row g-4">
+  {% for p in portfolio_data %}
+    {% if p.account.asset_type == "mmf" %}
+<div class="col-lg-4 col-md-6">
+  <div class="card shadow-sm border-0 rounded-4 h-100">
+
+    <!-- Header -->
+    <div class="card-header bg-info text-white fw-bold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-piggy-bank me-1"></i> {{ p.account.name }}</span>
+
+      <!-- Actions Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-light rounded-circle p-0" type="button"
+                style="width: 28px; height: 28px;" 
+                id="dropdownMenuButton{{ p.account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+              <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'update_investment_account' p.account.id %}">
+              <i class="bi bi-pencil-square me-2 text-warning"></i> Edit
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this investment account?');">
+                <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-6 text-muted small">Current Value of Investment</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Total Amount Invested</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+        <!--<dt class="col-6 text-muted small">Accrued Interest</dt>-->
+        <!--<dd class="col-6 fw-semibold mb-2">{{ p.accrued_interest|floatformat:2 }} {{ p.currency }}</dd>-->
+
+        <dt class="col-6 text-muted small">Recorded Interest</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.dividends|default:"0"|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Yield Rate p.a</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.account.yield_rate|default:"0"|floatformat:2 }}%</dd>
+
+        <dt class="col-6 text-muted small">Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.gain_loss|floatformat:2 }} {{ p.currency }} ({{ p.pct_gain_loss|floatformat:2 }}%)
+        </dd>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+
+  </div>
+</div>
+
+
+<!-- Real Estate -->
+<div class="tab-pane fade" id="real_estate">
+
+  <!-- Summary -->
+<!-- Real Estate Summary -->
+<div class="card bg-transparent border-0 rounded-4 mb-3">
+  <!-- Summary Header -->
+  <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-building fs-5 me-2"></i>Real Estate Summary</span>
+
+    <button class="btn btn-success btn-md fw-semibold shadow-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#realEstateDetails"
+            aria-expanded="false" 
+            aria-controls="realEstateDetails">
+      <i class="bi bi-eye me-1"></i> See Portfolio
+    </button>
+
+  </div>
+
+  <!-- Summary Section -->
+  <div class="card-body">
+    <div class="row text-center g-3">
+
+      <!-- Total Purchase -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+          <div class="fw-semibold">Total Purchase Investment</div>
+          <div class="fs-6 fw-bold">{{ total_real_estate_invested|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Gain/Loss -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-arrow-up-right-circle fs-3 mb-1 {% if total_real_estate_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+          <div class="fw-semibold">Gain/Loss</div>
+          <div class="fs-6 fw-bold {% if total_real_estate_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ total_real_estate_gain_loss|floatformat:2 }} {{ base_currency }}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROI -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-bar-chart fs-3 mb-1 text-warning"></i>
+          <div class="fw-semibold">ROI</div>
+          <div class="fs-6 fw-bold">{{ total_real_estate_roi|floatformat:2 }}%</div>
+        </div>
+      </div>
+
+      <!-- Optional Placeholder / Empty for alignment -->
+<!--       <div class="col-md-3 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-info-circle fs-3 mb-1 text-secondary"></i>
+          <div class="fw-semibold">&nbsp;</div>
+          <div class="fs-6 fw-bold">&nbsp;</div>
+        </div>
+      </div> -->
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="realEstateDetails">
+<div class="row g-4">
+  {% for p in portfolio_data %}
+    {% if p.account.asset_type == "real_estate" %}
+<div class="col-lg-4 col-md-6">
+  <div class="card shadow-sm border-0 rounded-4 h-100">
+
+    <!-- Header -->
+    <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-building me-1"></i> {{ p.account.name }}</span>
+
+      <!-- Actions Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-light rounded-circle p-0" type="button"
+                style="width: 28px; height: 28px;" 
+                id="dropdownMenuButton{{ p.account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+              <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'update_investment_account' p.account.id %}">
+              <i class="bi bi-pencil-square me-2 text-warning"></i> Edit
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this investment account?');">
+                <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-6 text-muted small">Current Value of Investment</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Total Invested</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Recorded Rental Income</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.all_income|default:"0"|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Recorded Expenses</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.all_expense|default:"0"|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">ROI</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.roi_pct|floatformat:2 }}%</dd>
+
+        <dt class="col-6 text-muted small">Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.gain_loss|floatformat:2 }} {{ p.currency }}
+        </dd>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+
+  </div>
+
+</div>
+
+
+
+<!-- Other Assets -->
+<div class="tab-pane fade" id="other">
+
+<!-- Other Assets Summary -->
+<div class="card bg-transparent border-0 rounded-4 mb-3">
+  <!-- Summary Header -->
+  <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-box-seam fs-5 me-2"></i>Other Assets Summary</span>
+
+    <button class="btn btn-info btn-md fw-semibold shadow-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#otherDetails"
+            aria-expanded="false" 
+            aria-controls="otherDetails">
+      <i class="bi bi-eye me-1"></i> See Portfolio
+    </button>
+
+  </div>
+
+  <!-- Summary Section -->
+  <div class="card-body">
+    <div class="row text-center g-3">
+
+      <!-- Total Invested -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+          <div class="fw-semibold">Total Invested</div>
+          <div class="fs-6 fw-bold">{{ total_other_invested|floatformat:2 }} {{ base_currency }}</div>
+        </div>
+      </div>
+
+      <!-- Gain/Loss -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-arrow-up-right-circle fs-3 mb-1 {% if total_other_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+          <div class="fw-semibold">Gain/Loss</div>
+          <div class="fs-6 fw-bold {% if total_other_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ total_other_gain_loss|floatformat:2 }} {{ base_currency }}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROI -->
+      <div class="col-md-4 col-6">
+        <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+          <i class="bi bi-bar-chart fs-3 mb-1 text-warning"></i>
+          <div class="fw-semibold">ROI</div>
+          <div class="fs-6 fw-bold">{{ total_other_roi|floatformat:2 }}%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="otherDetails">
+<div class="row g-4">
+  {% for p in portfolio_data %}
+    {% if p.account.asset_type == "other" %}
+<div class="col-lg-4 col-md-6">
+  <div class="card shadow-sm border-0 rounded-4 h-100">
+
+    <!-- Header -->
+    <div class="card-header bg-info text-white fw-bold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-box-seam me-1"></i> {{ p.account.name }}</span>
+
+      <!-- Actions Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-light rounded-circle p-0" type="button"
+                style="width: 28px; height: 28px;" 
+                id="dropdownMenuButton{{ p.account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+              <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'update_investment_account' p.account.id %}">
+              <i class="bi bi-pencil-square me-2 text-warning"></i> Edit
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this investment account?');">
+                <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-6 text-muted small">Current Value of Investment</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Total Amount Invested</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Recorded Income</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.all_income|default:"0"|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">Recorded Expenses</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.all_expense|default:"0"|floatformat:2 }} {{ p.currency }}</dd>
+
+        <dt class="col-6 text-muted small">ROI</dt>
+        <dd class="col-6 fw-semibold mb-2">{{ p.roi_pct|floatformat:2 }}%</dd>
+
+        <dt class="col-6 text-muted small">Gain/Loss</dt>
+        <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {{ p.gain_loss|floatformat:2 }} {{ p.currency }}
+        </dd>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+
+  </div>
+</div>
+
+
+<!-- SACCO / Chama Assets -->
+<div class="tab-pane fade" id="sacco">
+
+  <!-- SACCO Summary -->
+  <div class="card bg-transparent border-0 rounded-4 mb-3">
+    <!-- Summary Header -->
+    <div class="card-header bg-transparent border-0 fw-bold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-people fs-5 me-2"></i>SACCO & Chama Summary</span>
+
+      <button class="btn btn-success btn-md fw-semibold shadow-sm" 
+              type="button" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#saccoDetails"
+              aria-expanded="false" 
+              aria-controls="saccoDetails">
+        <i class="bi bi-eye me-1"></i> See Portfolio
+      </button>
+
+    </div>
+
+    <!-- Summary Section -->
+    <div class="card-body">
+      <div class="row text-center g-3">
+
+        <!-- Total Invested -->
+        <div class="col-md-3 col-6">
+          <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+            <i class="bi bi-wallet2 fs-3 mb-1 text-primary"></i>
+            <div class="fw-semibold">Total Invested</div>
+            <div class="fs-6 fw-bold">{{ total_sacco_invested|floatformat:2 }} {{ base_currency }}</div>
+          </div>
+        </div>
+
+        <!-- Current Value -->
+        <div class="col-md-3 col-6">
+          <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+            <i class="bi bi-cash-stack fs-3 mb-1 text-success"></i>
+            <div class="fw-semibold">Current Value of Investment</div>
+            <div class="fs-6 fw-bold">{{ total_sacco_value|floatformat:2 }} {{ base_currency }}</div>
+          </div>
+        </div>
+
+        <!-- Dividends -->
+        <div class="col-md-3 col-6">
+          <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+            <i class="bi bi-pie-chart fs-3 mb-1 text-warning"></i>
+            <div class="fw-semibold">Recorded Dividends</div>
+            <div class="fs-6 fw-bold">{{ total_sacco_dividends|floatformat:2 }} {{ base_currency }}</div>
+          </div>
+        </div>
+
+        <!-- Gain/Loss -->
+        <div class="col-md-3 col-6">
+          <div class="bg-light rounded-3 p-3 shadow-sm d-flex flex-column align-items-center">
+            <i class="bi bi-trophy fs-3 mb-1 {% if total_sacco_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+            <div class="fw-semibold">ROI</div>
+            <div class="fs-6 fw-bold {% if total_sacco_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ total_sacco_roi|floatformat:2 }} %
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Collapsible Details -->
+  <div class="collapse" id="saccoDetails">
+    <div class="row g-4">
+      {% for p in portfolio_data %}
+        {% if p.account.asset_type == "sacco" %}
+          <div class="col-lg-4 col-md-6">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+
+              <!-- Header -->
+              <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-1"></i> {{ p.account.name }}</span>
+
+                <!-- Actions Dropdown -->
+                <div class="dropdown">
+                  <button class="btn btn-outline-light rounded-circle p-0" type="button"
+                          style="width: 28px; height: 28px;" 
+                          id="dropdownMenuButton{{ p.account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenuButton{{ p.account.id }}">
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'add_investment_transaction' p.account.id %}">
+                        <i class="bi bi-plus-circle me-2 text-primary"></i> Log Transaction
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'update_investment_account' p.account.id %}">
+                        <i class="bi bi-pencil-square me-2 text-warning"></i> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <form method="POST" action="{% url 'delete_investment_account' p.account.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('Are you sure you want to delete this account?');">
+                          <i class="bi bi-trash me-2 text-danger"></i> Delete Account
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Body -->
+              <div class="card-body">
+                <dl class="row mb-0">
+
+                  <dt class="col-6 text-muted small">Current Value of Investment</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.current_value|floatformat:2 }} {{ p.currency }}</dd>
+
+                  <dt class="col-6 text-muted small">Total Invested</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.invested|floatformat:2 }} {{ p.currency }}</dd>
+
+                  <dt class="col-6 text-muted small">Capital Shares Held</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.account.sacco_capital_share|floatformat:2 }} {{ p.currency }}</dd>
+
+                  <!--<dt class="col-6 text-muted small">Contributions Made</dt>-->
+                  <!--<dd class="col-6 fw-semibold mb-2">{{ p.account.sacco_total_contributions|floatformat:2 }} {{ p.currency }}</dd>-->
+
+                  <dt class="col-6 text-muted small">Regular Contributions</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.account.sacco_minimum_contribution|floatformat:2 }} {{ p.currency }} {{ p.account.sacco_contribution_frequency }}</dd>
+
+                  <dt class="col-6 text-muted small">Dividend Frequency</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.account.sacco_dividend_frequency }}</dd>
+
+                  <dt class="col-6 text-muted small">Dividends Earned</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.income|floatformat:2 }} {{ p.currency }}</dd>
+
+                  <dt class="col-6 text-muted small">ROI</dt>
+                  <dd class="col-6 fw-semibold mb-2">{{ p.roi_pct|floatformat:2 }}%</dd>
+
+                  <dt class="col-6 text-muted small">Gain/Loss</dt>
+                  <dd class="col-6 fw-semibold mb-2 {% if p.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ p.gain_loss|floatformat:2 }} {{ p.currency }}
+                  </dd>
+
+                </dl>
+              </div>
+
+            </div>
+          </div>
+
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<br>
+
+
+<p>
+  <button 
+    class="btn btn-sm btn-outline-info shadow-sm fw-semibold" 
+    type="button" 
+    data-bs-toggle="collapse" 
+    data-bs-target="#portfolioTermsInfo" 
+    aria-expanded="false" 
+    aria-controls="portfolioTermsInfo"
+    style="min-width: 220px;"
+  >
+    What do the terms mean?
+  </button>
+</p>
+
+<div class="collapse mt-2" id="portfolioTermsInfo">
+  <div class="card border-info shadow-sm bg-white">
+    <div class="card-body text-muted small" style="line-height: 1.5;">
+      <p>
+        Key terms you will see throughout your portfolio dashboard:
+      </p>
+      <ul>
+        <li><strong>Total Invested</strong>: Amount put into the asset.</li>
+        <li><strong>Current Value</strong>: Present market worth.</li>
+        <li><strong>Gain/Loss</strong>: Profit or loss to date.</li>
+        <li><strong>ROI (%)</strong>: Gain/loss as a percentage of investment.</li>
+        <li><strong>Yield Rate (%)</strong>: Annualized return (e.g., bonds, MMFs).</li>
+        <li><strong>Realized Gain/Loss</strong>: Profit/loss from sold assets.</li>
+        <li><strong>Total Return</strong>: Overall performance (gains + income).</li>
+      </ul>
+
+
+    </div>
+  </div>
+</div>
+
+
+<br>
+<div class="row g-4">
+
+  <!-- Portfolio Growth Line Chart -->
+  <div class="col-md-9">
+    <div class="card shadow-sm border-0 rounded-4 position-relative overflow-hidden">
+      <!-- Subtle background icon -->
+      <i class="bi bi-graph-up position-absolute top-50 start-50 translate-middle text-muted"
+         style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+      <div class="card-body" style="position: relative; z-index: 1;">
+        <canvas id="portfolioLine" style="width:100%; height:500px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio Pie Chart -->
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 rounded-4 position-relative overflow-hidden">
+      <!-- Subtle background icon -->
+      <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-muted"
+         style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+      <div class="card-body" style="position: relative; z-index: 1;">
+        <canvas id="portfolioPie" style="width:100%; height:500px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+  <!-- Analytics -->
+  <div class="tab-pane fade" id="charts">
+
+<div class="row g-4 mt-1">
+
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 position-relative overflow-hidden">
+      <!-- Subtle background icon -->
+      <i class="bi bi-bar-chart-fill position-absolute top-50 start-50 translate-middle text-muted"
+         style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+      <div class="card-body" style="position: relative; z-index: 1;">
+        <canvas id="gainLossBar"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 position-relative overflow-hidden">
+      <!-- Subtle background icon -->
+      <i class="bi bi-graph-up-arrow position-absolute top-50 start-50 translate-middle text-muted"
+         style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+      <div class="card-body" style="position: relative; z-index: 1;">
+        <canvas id="assetLineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Bootstrap tooltip
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+  // Add spinning effect on click
+  const btn = document.getElementById('fetchPricesBtn');
+  const icon = document.getElementById('fetchIcon');
+
+  btn.addEventListener('click', () => {
+    icon.classList.add('bi-spin');  // spin icon to indicate fetching
+    // Optional: disable button to prevent double clicks
+    btn.classList.add('disabled');
+    btn.setAttribute('aria-disabled', 'true');
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tabs = document.querySelectorAll('#portfolioTabs .nav-link');
+
+  function activateTab(tab) {
+    tabs.forEach(t => {
+      t.classList.remove('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      t.classList.add('bg-light', 'text-muted');
+    });
+    tab.classList.add('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+    tab.classList.remove('bg-light', 'text-muted');
+  }
+
+  // Restore last active tab
+  const lastTabId = localStorage.getItem('lastPortfolioTab');
+  const defaultTab = lastTabId ? document.getElementById(lastTabId) : tabs[0];
+  if (defaultTab) {
+    activateTab(defaultTab);
+    const targetId = defaultTab.getAttribute('data-bs-target');
+    const targetSection = document.querySelector(targetId);
+    if (targetSection) {
+      const container = targetSection.closest('.tab-content');
+      if (container) {
+        container.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+      }
+      targetSection.classList.add('show', 'active');
+    }
+  }
+
+  // Save clicked tab
+  tabs.forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function () {
+      activateTab(this);
+      localStorage.setItem('lastPortfolioTab', this.id);
+    });
+  });
+});
+</script>
+
+<script>
+// Utility function to generate a palette of distinct colors
+function generateColors(n, alpha=0.7) {
+  const colors = [];
+  for(let i=0; i<n; i++){
+    const hue = i * 360 / n;
+    colors.push(`hsla(${hue}, 70%, 50%, ${alpha})`);
+  }
+  return colors;
+}
+
+// === Portfolio Pie Chart ===
+const pieColors = generateColors({{ portfolio_data|length }});
+new Chart(document.getElementById('portfolioPie'), {
+  type: 'pie',
+  data: {
+    labels: {{ gain_loss_labels_json|safe }},
+    datasets: [{
+      data: [{% for p in portfolio_data %}{{ p.current_value }},{% endfor %}],
+      backgroundColor: pieColors,
+      borderColor: '#fff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    aspectRatio: 1,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Portfolio Allocation',
+        font: { size: 18, weight: 'bold' }
+      },
+      legend: { position: 'bottom' },
+      tooltip: { mode: 'index', intersect: false }
+    }
+  }
+});
+
+// === Gain/Loss Bar Chart ===
+const gainLossColors = {{ gain_loss_data_json|safe }}.map(v => v >= 0 ? '#28a745' : '#dc3545');
+new Chart(document.getElementById('gainLossBar'), {
+  type: 'bar',
+  data: {
+    labels: {{ gain_loss_labels_json|safe }},
+    datasets: [{
+      label: 'Gain/Loss',
+      data: {{ gain_loss_data_json|safe }},
+      backgroundColor: gainLossColors,
+      borderRadius: 5,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: { ticks: { autoSkip: false }, grid: { display: false } },
+      y: { beginAtZero: true, ticks: { callback: val => val.toLocaleString() }, grid: { display: true } }
+    },
+    plugins: {
+      title: {
+        display: true,
+        text: 'Gain/Loss by Asset',
+        font: { size: 18, weight: 'bold' }
+      },
+      legend: { display: false },
+      tooltip: { mode: 'index', intersect: false }
+    }
+  }
+});
+
+// === Portfolio Growth Line Chart ===
+const growthColors = generateColors(Object.keys({{ account_growth_json|safe }}).length, 0.8);
+new Chart(document.getElementById('portfolioLine'), {
+  type: 'line',
+  data: {
+    labels: {{ growth_dates_json|safe }},
+    datasets: Object.keys({{ account_growth_json|safe }}).map((n, i) => ({
+      label: n,
+      data: {{ account_growth_json|safe }}[n],
+      borderColor: growthColors[i],
+      backgroundColor: growthColors[i].replace('0.8', '0.2'),
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointHoverRadius: 6
+    }))
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      title: {
+        display: true,
+        text: 'Portfolio Growth Over Time',
+        font: { size: 18, weight: 'bold' }
+      },
+      legend: { position: 'bottom' }
+    },
+    scales: { x: { grid: { display: false } }, y: { beginAtZero: false, grid: { display: false } } }
+  }
+});
+
+// === Asset Trends Line Chart ===
+const assetColors = generateColors(Object.keys({{ account_prices_json|safe }}).length, 0.8);
+new Chart(document.getElementById('assetLineChart'), {
+  type: 'line',
+  data: {
+    labels: {{ historical_dates_json|safe }},
+    datasets: Object.keys({{ account_prices_json|safe }}).map((n, i) => ({
+      label: n,
+      data: {{ account_prices_json|safe }}[n],
+      borderColor: assetColors[i],
+      backgroundColor: assetColors[i].replace('0.8', '0.2'),
+      fill: true,
+      tension: 0.3,
+      pointRadius: 2,
+      pointHoverRadius: 5
+    }))
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      title: {
+        display: true,
+        text: 'Asset Price Trends',
+        font: { size: 18, weight: 'bold' }
+      },
+      legend: { position: 'bottom' }
+    },
+    scales: { x: { grid: { display: false } }, y: { beginAtZero: false, grid: { display: false } } }
+  }
+});
+
+</script>
+
+{% endblock %}

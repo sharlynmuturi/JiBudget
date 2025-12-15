@@ -1,0 +1,103 @@
+<a href="{% url 'add_starting_budget' %}" class="btn btn-sm btn-outline-warning mb-3">+ Set Budget</a>
+
+<div class="row mb-4">
+  <div class="col-md-12">
+
+      <!-- Collapsible Content -->
+      <div class="collapse show" id="budgetCards">
+        <div class="card-body">
+          <div class="row g-4">
+            {% for item in budgets %}
+                <div class="col-6 col-sm-6 col-md-6 col-lg-3 d-flex">
+                  <div class="card shadow-sm h-100 border-0 rounded-4 w-100 bg-warning-subtle">
+                    <div class="card-body p-4 d-flex flex-column justify-content-between">
+                
+                      <!-- Top row: month + actions -->
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="text-muted mb-0 d-flex align-items-center">
+                          <i class="bi bi-calendar-event me-1"></i> {{ item.month|date:"F Y" }}
+                        </h6>
+                
+                        <!-- Dropdown actions -->
+                        <div class="dropdown">
+                          <button type="button" class="btn btn-outline-secondary rounded-circle p-0"
+                                  style="width: 28px; height: 28px;"
+                                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                            <i class="bi bi-three-dots-vertical fs-6"></i>
+                          </button>
+                
+                          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" 
+                                 href="{% url 'edit_budget' item.id %}">
+                                <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" 
+                                 href="{% url 'duplicate_budget' item.id %}">
+                                <i class="bi bi-files me-2 text-success"></i> Reuse This Month
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" 
+                                 href="{% url 'toggle_favourite_budget' item.id %}">
+                                <i class="bi {% if item.is_favourite %}bi-star-fill text-warning{% else %}bi-star{% endif %} me-2"></i>
+                                {% if item.is_favourite %}Remove Bookmark{% else %}Bookmark{% endif %}
+                              </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                              <form method="post" action="{% url 'delete_budget' item.id %}" 
+                                    onsubmit="return confirm('Remove this budget?');">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item d-flex align-items-center text-danger">
+                                  <i class="bi bi-trash3 me-2"></i> Delete
+                                </button>
+                              </form>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                
+                        <!-- Card body -->
+                        <div>
+                          <h5 class="card-title mb-2 fw-bold text-dark d-flex align-items-center">
+                            {% if item.is_favourite %}
+                              <i class="bi bi-star-fill text-warning me-2 fs-5" title="Bookmarked"></i>
+                            {% endif %}
+                            {% if item.subcategory %}
+                              {{ item.subcategory.name }}
+                            {% else %}
+                              <span class="text-muted">No Subcategory</span>
+                            {% endif %}
+                          </h5>
+                        
+                          <p class="mb-1 text-muted small">Budgeted Amount</p>
+                          <p class="fw-semibold fs-5 text-primary">
+                            KES {{ item.forecasted_amount|floatformat:2 }}
+                          </p>
+                        </div>
+
+
+                
+                    </div>
+                  </div>
+                </div>
+
+            {% empty %}
+            <div class="col-12">
+              <div class="alert alert-warning text-center mt-4">
+                  <i class="bi bi-info-circle fs-3 mb-2 d-block"></i>
+                  No budgets have been set.
+            </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+  </div>
+</div>
+
+

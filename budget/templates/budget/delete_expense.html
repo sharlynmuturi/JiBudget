@@ -1,0 +1,20 @@
+{% extends 'budget/base.html' %}
+{% block title %}Delete Expense{% endblock %}
+
+{% block content %}
+<h3>Confirm Deletion</h3>
+<p>Are you sure you want to delete this expense?</p>
+
+<ul>
+    <li><strong>Category:</strong> {{ expense.category }}</li>
+    <li><strong>Description:</strong> {{ expense.description }}</li>
+    <li><strong>Amount:</strong> KES {{ expense.amount }}</li>
+    <li><strong>Date:</strong> {{ expense.date }}</li>
+</ul>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'edit_expense' expense.id %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

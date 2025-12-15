@@ -1,0 +1,39 @@
+{% extends 'budget/base.html' %}
+{% block title %}Budget vs Actual - {{ month }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Budget vs Actual — {{ month }}</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Budgeted</th>
+            <th>Spent</th>
+            <th>Remaining</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in report %}
+        <tr>
+            <td>{{ entry.item }}</td>
+            <td>KES {{ entry.budgeted|floatformat:2 }}</td>
+            <td>KES {{ entry.actual|floatformat:2 }}</td>
+            <td>
+                {% if entry.difference < 0 %}
+                    <span class="text-danger">Overspent by KES {{ entry.difference|floatformat:2|slice:"1:" }}</span>
+                {% elif entry.difference == 0 %}
+                    <span class="text-muted">Balanced</span>
+                {% else %}
+                    <span class="text-success">Remaining KES {{ entry.difference|floatformat:2 }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center text-muted">No budget data available this month.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

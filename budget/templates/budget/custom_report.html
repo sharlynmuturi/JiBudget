@@ -1,0 +1,675 @@
+{% extends 'budget/base.html' %}
+{% block title %}See Activity{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-search me-1"></i> Insights </h2>
+  </div>
+  <div class="text-end">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}{% if message.extra_tags %} alert-{{ message.extra_tags }}{% endif %} alert-dismissible fade show py-1 px-3 mb-2 d-inline-block" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<hr style="border: none;">
+
+ <div class="card-body">
+  <form method="get" action=".">
+    <div class="row g-3 align-items-end">
+      <div class="col-6 col-md-3">
+        <label for="start_date" class="form-label">Start Date</label>
+        <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="end_date" class="form-label">End Date</label>
+        <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label d-block invisible">Filter</label>
+        <button type="submit" class="btn btn-primary w-100">See Activity</button>
+      </div>
+       <div class="col-6 col-md-3">
+        <label class="form-label d-block invisible">Export</label>
+        <a href="{% url 'export_report_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-outline-success w-100">
+          <i class="bi bi-download"></i> Export to Excel
+        </a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<br>
+
+<div class="row">
+<div class="col-md-9">
+    
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <span class="text-muted small fst-italic">Activity for {{ start_date }} to {{ end_date }}</span>
+</div>
+
+<div class="row g-4 mb-4">
+
+  
+<!-- My Income -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 rounded-4 bg-white position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0"
+       data-bs-toggle="popover"
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>My Income</strong><br>Total income received during this period.">
+    <i class="bi bi-arrow-down-circle position-absolute top-50 end-0 translate-middle-y text-success"
+       style="font-size: 120px; opacity: 0.05; z-index: 0; pointer-events: none; margin-right: 10px;"></i>
+
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <h5 class="card-title text-muted">My Income</h5>
+      <p class="fs-5 fw-semibold">KES {{ total_income }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- My Expenses -->
+<div class="col-6 col-md-6">
+  <div class="card shadow-sm h-100 border-0 rounded-4 bg-white position-relative overflow-hidden" 
+       style="min-height: 130px;"
+       tabindex="0"
+       data-bs-toggle="popover"
+       data-bs-trigger="hover focus"
+       data-bs-placement="top"
+       data-bs-html="true"
+       data-bs-content="<strong>My Expenses</strong><br>Total expenses logged during this period.">
+    <i class="bi bi-arrow-up-circle position-absolute top-50 end-0 translate-middle-y text-danger"
+       style="font-size: 120px; opacity: 0.05; z-index: 0; pointer-events: none; margin-right: 10px;"></i>
+
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <h5 class="card-title text-muted">My Expenses</h5>
+      <p class="fs-5 fw-semibold">KES {{ total_expense }}</p>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Balance -->
+  <!--<div class="col-6 col-md-6">-->
+  <!--  <div class="card shadow-sm h-100 border-0 rounded-4 bg-light position-relative overflow-hidden" style="min-height: 130px;">-->
+  <!--    <i class="bi bi-cash-stack position-absolute top-50 end-0 translate-middle-y text-secondary"-->
+  <!--       style="font-size: 120px; opacity: 0.05; z-index: 0; pointer-events: none; margin-right: 10px;"></i>-->
+  <!--    <div class="card-body p-4 position-relative" style="z-index: 1;">-->
+  <!--      <h5 class="card-title text-muted">Balance</h5>-->
+  <!--      <p class="fs-3 fw-semibold {% if balance < 0 %}text-danger{% elif balance < total_budget|divisibleby:2 %}text-warning{% else %}text-success{% endif %}">-->
+  <!--        KES {{ balance }}-->
+  <!--      </p>-->
+  <!--    </div>-->
+  <!--  </div>-->
+  <!--</div>-->
+
+  <!--<div class="col-6 col-md-6">-->
+  <!--  <div class="card shadow-sm h-100 border-0 rounded-4 bg-light position-relative overflow-hidden" style="min-height: 130px;">-->
+  <!--    <i class="bi bi-bar-chart-fill position-absolute top-50 end-0 translate-middle-y text-secondary"-->
+  <!--       style="font-size: 120px; opacity: 0.05; z-index: 0; pointer-events: none; margin-right: 10px;"></i>-->
+  <!--    <div class="card-body p-4 position-relative" style="z-index: 1;">-->
+  <!--      <h5 class="card-title text-muted">Budget</h5>-->
+  <!--      <p class="fs-3 fw-semibold text-dark">KES {{ total_budget }}</p>-->
+  <!--    </div>-->
+  <!--  </div>-->
+  <!--</div>-->
+
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-bold">
+    Transactions
+  </div>
+  <div class="card-body">
+
+    <!-- Incomes/Expenses Tab Buttons -->
+    <div class="nav nav-pills nav-justified mb-3" id="income-expense-tabs" role="tablist">
+      <button class="nav-link border text-dark shadow-sm" id="incomes-tab"
+              data-bs-toggle="tab" data-bs-target="#incomes-section" type="button" role="tab">
+        <i class="bi bi-cash-stack me-1"></i> Incomes
+      </button>
+      <button class="nav-link border text-dark shadow-sm" id="expenses-tab"
+              data-bs-toggle="tab" data-bs-target="#expenses-section" type="button" role="tab">
+        <i class="bi bi-cart4 me-1"></i> Expenses
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="income-expense-tab-content">
+      
+      <!-- Incomes Section -->
+      <div class="tab-pane fade show active" id="incomes-section" role="tabpanel">
+        <table class="table table-lg table-hover small mb-0">
+          <thead class="table-light">
+            <tr><th>Date</th><th>Wallet</th><th>Income</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            {% for income in incomes %}
+            <tr>
+              <td>{{ income.date }}</td>
+              <td>{{ income.income_source }}</td>
+              <td>{{ income.category }} - {{ income.subcategory }}</td>
+              <td>KES {{ income.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">No incomes for this period.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Expenses Section -->
+      <div class="tab-pane fade" id="expenses-section" role="tabpanel">
+        <table class="table table-lg table-hover small mb-0">
+          <thead class="table-light">
+            <tr><th>Date</th><th>Wallet</th><th>Expense</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            {% for expense in expenses %}
+            <tr>
+              <td>{{ expense.date }}</td>
+              <td>{{ expense.source }}</td>
+              <td>{{ expense.subcategory }}</td>
+              <td>KES {{ expense.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">No expenses for this period.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+<!--<div class="card shadow-sm mb-4">-->
+<!--  <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">-->
+<!--    <a class="text-dark text-decoration-none d-flex align-items-center" data-bs-toggle="collapse" href="#budgetSection" role="button" aria-expanded="true" aria-controls="budgetSection">-->
+<!--      <i class="bi bi-chevron-up me-2 toggle-icon" style="transition: transform 0.3s;"></i>-->
+<!--      <span>-->
+<!--        Budget vs Actual-->
+<!--      </span>-->
+<!--    </a>-->
+<!--  </div>-->
+
+<!--  <div class="collapse show" id="budgetSection">-->
+<!--    <div class="card-body p-0">-->
+<!--      <table class="table table-lg mb-0">-->
+<!--        <thead class="table-light">-->
+<!--          <tr><th>Expense</th><th>Budgeted</th><th>Spent</th><th>Status</th></tr>-->
+<!--        </thead>-->
+<!--        <tbody>-->
+<!--          {% for entry in report %}-->
+<!--          <tr>-->
+<!--            <td>{{ entry.item }}</td>-->
+<!--            <td>KES {{ entry.budgeted|floatformat:2 }}</td>-->
+<!--            <td>KES {{ entry.actual|floatformat:2 }}</td>-->
+<!--            <td>-->
+<!--              {% if entry.difference < 0 %}-->
+<!--                <span class="text-danger">Overspent by KES {{ entry.difference|floatformat:2|slice:"1:" }}</span>-->
+<!--              {% elif entry.difference == 0 %}-->
+<!--                <span class="text-muted">Balanced</span>-->
+<!--              {% else %}-->
+<!--                <span class="text-success">Remaining KES {{ entry.difference|floatformat:2 }}</span>-->
+<!--              {% endif %}-->
+<!--            </td>-->
+<!--          </tr>-->
+<!--          {% empty %}-->
+<!--          <tr><td colspan="4" class="text-center text-muted">No budgets for this period.</td></tr>-->
+<!--          {% endfor %}-->
+<!--        </tbody>-->
+<!--      </table>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+  </div>
+
+
+
+
+<!-- Charts Wrapper Card -->
+<div class="col-md-3">
+<!-- Visual Insights Section -->
+<div class="card shadow-sm mb-4 bg-transparent border-0"
+     tabindex="0"
+     data-bs-toggle="popover"
+     data-bs-trigger="hover focus"
+     data-bs-placement="top"
+     data-bs-html="true"
+     data-bs-content="Visual summaries and charts of this period's activity.">
+
+  <div class="card-header bg-light border-0 fw-semibold fs-6 d-flex align-items-center rounded-4 py-3 px-3">
+    <i class="bi bi-bar-chart-line me-2 fs-5 text-primary"></i>
+    <span class="text-dark">Visual Insights</span>
+  </div>
+  <div class="card-body px-2 py-3">
+
+       <!--Budget Donut Chart -->
+<!--<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">-->
+<!--  <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"-->
+<!--     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>-->
+
+<!--  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">-->
+<!--    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"-->
+<!--       data-bs-toggle="collapse"-->
+<!--       href="#budgetDonutSection"-->
+<!--       role="button"-->
+<!--       aria-expanded="false"-->
+<!--       aria-controls="budgetDonutSection">-->
+<!--      <span class="d-flex align-items-center">-->
+<!--        <i class="bi bi-chevron-down me-2 toggle-icon"></i>-->
+<!--        My Budget Usage-->
+<!--      </span>-->
+<!--    </a>-->
+<!--  </div>-->
+
+<!--  <div class="collapse" id="budgetDonutSection">-->
+<!--    <div class="card-body position-relative" style="z-index: 1;">-->
+<!--      <canvas id="budgetDonutChart" height="250"></canvas>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+
+ <!--Subcategory Donut Chart -->
+<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">
+   <!--Watermark Icon -->
+  <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#subcategoryDonutSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="subcategoryDonutSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Spending Breakdown
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="subcategoryDonutSection">
+    <div class="card-body position-relative" style="z-index: 1;">
+      <canvas id="subcategoryDonutChart" height="250"></canvas>
+       <!--Legend below the chart -->
+      <ul id="subcategoryList" class="list-unstyled mt-3 small text-muted"></ul>
+    </div>
+  </div>
+</div>
+
+    <!-- Spending by Category Chart -->
+<div class="card shadow-sm  mb-4 rounded-4 position-relative overflow-hidden">
+  <i class="bi bi-pie-chart position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#pieChartSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="pieChartSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Spending by Category
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="pieChartSection">
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <canvas id="categoryPieChart" height="450"></canvas>
+    </div>
+  </div>
+</div>
+
+
+
+    <!-- Income vs Expense Chart -->
+<div class="card shadow-sm mb-4 rounded-4 position-relative overflow-hidden">
+  <i class="bi bi-bar-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"
+     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+
+  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">
+    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#barChartSection"
+       role="button"
+       aria-expanded="false"
+       aria-controls="barChartSection">
+      <span class="d-flex align-items-center">
+        <i class="bi bi-chevron-down me-2 toggle-icon"></i>
+        Income vs Expense
+      </span>
+    </a>
+  </div>
+
+  <div class="collapse" id="barChartSection">
+    <div class="card-body p-4 position-relative" style="z-index: 1;">
+      <canvas id="transactionBarChart" height="250"></canvas>
+    </div>
+  </div>
+</div>
+
+       <!--Budget Donut Chart -->
+<!--<div class="card shadow-sm rounded-4 position-relative overflow-hidden">-->
+  <!-- Watermark Icon -->
+<!--  <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-secondary"-->
+<!--     style="font-size: 200px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>-->
+
+<!--  <div class="card-header bg-light fw-semibold p-3 rounded-top-4 position-relative" style="z-index: 1;">-->
+<!--    <a class="d-flex justify-content-between align-items-center text-dark text-decoration-none"-->
+<!--       data-bs-toggle="collapse"-->
+<!--       href="#budgetDonutSection"-->
+<!--       role="button"-->
+<!--       aria-expanded="false"-->
+<!--       aria-controls="budgetDonutSection">-->
+<!--      <span class="d-flex align-items-center">-->
+<!--        <i class="bi bi-chevron-down me-2 toggle-icon"></i>-->
+<!--        My Budget Usage-->
+<!--      </span>-->
+<!--    </a>-->
+<!--  </div>-->
+
+<!--  <div class="collapse" id="budgetDonutSection">-->
+<!--    <div class="card-body position-relative" style="z-index: 1;">-->
+<!--      <canvas id="budgetDonutChart" height="250"></canvas>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+    
+  </div>
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.forEach(popoverTriggerEl => {
+      new bootstrap.Popover(popoverTriggerEl)
+    })
+
+})
+</script>
+
+<script>
+  const ctx = document.getElementById('transactionBarChart').getContext('2d');
+  const income = {{ total_income|default:0 }};
+  const expense = {{ total_expense|default:0 }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Income', 'Expense'],
+      datasets: [{
+        label: 'KES',
+        data: [income, expense],
+        backgroundColor: ['#198754', '#dc3545'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Income vs Expense'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `KES ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'KES ' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<script>
+  const donutCtx = document.getElementById('budgetDonutChart').getContext('2d');
+
+  const totalBudget = {{ total_budget|default:0 }};
+  const totalSpent = {{ total_spent|default:0 }};
+  const remaining = totalBudget - totalSpent;
+
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+    labels: [
+      `Spent (KES {{ total_spent }})`,
+      `Budgeted (KES {{ total_budget }})`,
+    ],
+      datasets: [{
+        data: [totalSpent, remaining > 0 ? remaining : 0],
+        backgroundColor: ['#dc3545', '#fbe8a6'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Budget Usage'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: KES ${context.parsed}`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+
+<script>
+  const categoryDataRaw = {{ category_expenses_json|safe }};
+  const categoryLabels = Object.keys(categoryDataRaw);
+  const categoryData = Object.values(categoryDataRaw);
+
+  const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+
+  new Chart(categoryCtx, {
+    type: 'pie',
+    data: {
+      labels: categoryLabels,
+      datasets: [{
+        data: categoryData,
+        backgroundColor: ['#0d6efd', '#dc3545', '#ffc107', '#198754', '#6f42c1', '#20c997'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Expense Distribution by Category'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const value = context.parsed;
+              const percent = ((value / total) * 100).toFixed(1);
+              return `${context.label}: KES ${value} (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+
+<script> 
+document.addEventListener('DOMContentLoaded', function () {
+    const subcategoryData = JSON.parse('{{ subcategory_expenses_json|escapejs }}');
+
+    const labels = Object.keys(subcategoryData);
+    const values = Object.values(subcategoryData);
+
+    // Function to generate HSL colors dynamically
+    function generateColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = (i * 360 / count) % 360; // evenly spaced hues
+            colors.push(`hsl(${hue}, 65%, 55%)`);
+        }
+        return colors;
+    }
+
+    const colors = generateColors(labels.length);
+
+    const ctx = document.getElementById('subcategoryDonutChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '60%',
+            plugins: {
+                legend: { display: false },  // legend handled manually below
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const dataset = context.dataset;
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: KES ${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Populate legend below chart
+    const total = values.reduce((a, b) => a + b, 0);
+    const listContainer = document.getElementById('subcategoryList');
+    listContainer.innerHTML = '';
+
+    labels.forEach((label, index) => {
+        const percent = ((values[index] / total) * 100).toFixed(1);
+        const li = document.createElement('li');
+        li.classList.add('d-flex', 'align-items-center', 'mb-2');
+        li.innerHTML = `
+            <span style="display:inline-block; width:16px; height:16px; background-color:${colors[index]}; border-radius:3px; margin-right:8px;"></span>
+            <span class="flex-grow-1">${label}</span>
+            <span class="fw-semibold text-muted">
+                KES ${values[index].toLocaleString()} (${percent}%)
+            </span>
+        `;
+        listContainer.appendChild(li);
+    });
+});
+</script>
+
+
+
+
+<script>
+  setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => alert.classList.add('fade', 'show'));
+    setTimeout(() => alerts.forEach(alert => alert.remove()), 3000);
+  }, 3000);
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (toggle) {
+      const icon = toggle.querySelector('.toggle-icon');
+      const targetId = toggle.getAttribute('href');
+      const target = document.querySelector(targetId);
+
+      if (target && icon) {
+        target.addEventListener('hide.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-up');
+          icon.classList.add('bi-chevron-down');
+        });
+
+        target.addEventListener('show.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-down');
+          icon.classList.add('bi-chevron-up');
+        });
+      }
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('#income-expense-tabs .nav-link');
+
+    function activateTab(tab) {
+      tabs.forEach(t => {
+        t.classList.remove('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+        t.classList.add('bg-light', 'text-muted');
+      });
+      tab.classList.add('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      tab.classList.remove('bg-light', 'text-muted');
+    }
+
+    // Set initial active tab (first one)
+    activateTab(tabs[0]);
+
+    tabs.forEach(tab => {
+      tab.addEventListener('shown.bs.tab', function () {
+        activateTab(this);
+      });
+    });
+  });
+</script>
+
+
+{% endblock %}

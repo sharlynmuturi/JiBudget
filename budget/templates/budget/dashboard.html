@@ -1,0 +1,1064 @@
+{% extends 'budget/base.html' %}
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<style>
+  
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    
+</style>
+
+
+<div class="d-flex justify-content-between align-items-start">
+<div>
+  <hr class="mb-0" style="border: none;">
+  <h2 class="mb-1"><i class="bi bi-arrow-left-right"></i> Transactions</h2>
+  <p class="text-muted">Record your money moves as they happen.</p>
+</div>
+
+
+<hr style="border: none;">
+<div class="text-end">
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+</div>
+</div>
+
+<ul class="nav nav-pills gap-2 mb-4" id="dashboardTabs" role="tablist">
+
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link active bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+      id="income-expense-tab"
+      data-bs-toggle="pill"
+      data-bs-target="#income-expense"
+      type="button"
+      role="tab"
+      aria-controls="income-expense"
+      aria-selected="false"
+    >
+      <i class="bi bi-cash-stack"></i> Income vs Expense
+    </button>
+  </li>
+
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+      id="chart-summary-tab"
+      data-bs-toggle="pill"
+      data-bs-target="#chart-summary"
+      type="button"
+      role="tab"
+      aria-controls="chart-summary"
+      aria-selected="true"
+    >
+      <i class="bi bi-bar-chart-line"></i> Chart Summary
+    </button>
+  </li>
+
+<li class="nav-item d-none d-lg-flex" role="presentation">
+  <a 
+    href="{% url 'wallet_overview' %}" 
+    class="nav-link bg-white shadow-sm border fw-semibold text-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+  >
+    <i class="bi bi-wallet2"></i> Wallets
+  </a>
+</li>
+
+  
+</ul>
+
+
+<div class="tab-content" id="dashboardTabsContent">
+    
+<div class="tab-pane fade show active" id="income-expense" role="tabpanel" aria-labelledby="income-expense-tab">
+    
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-4"> 
+  <!-- Total Income -->
+  <div class="col">
+    <div class="card shadow-sm border-0 rounded-4 bg-white position-relative overflow-hidden min-vh-25 p-3 p-md-4"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="<strong>Total Income</strong><br>Sum of all income recorded.">
+      <i class="bi bi-arrow-down-circle position-absolute bottom-0 end-0 text-success"
+         style="font-size: clamp(50px, 10vw, 110px); opacity: 0.06; z-index: 0; pointer-events: none; margin: 10px;"></i>
+      <div class="card-body d-flex flex-column justify-content-center position-relative" style="z-index: 1;">
+        <p class="text-muted mb-1 fs-6 fs-md-5">Total Income</p>
+        <p class="fw-semibold text-success mb-0 fs-5 fs-md-4">KES {{ total_income }}</p>
+      {% if planned_income_total > 0 %}
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+          KES {{ planned_income_total }} is upcoming
+        </small>
+      {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Expenses -->
+  <div class="col">
+    <div class="card shadow-sm border-0 rounded-4 bg-white position-relative overflow-hidden min-vh-25 p-3 p-md-4"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="<strong>Total Expenses</strong><br>Sum of all expenses logged.">
+      <i class="bi bi-arrow-up-circle position-absolute bottom-0 end-0 text-danger"
+         style="font-size: clamp(50px, 10vw, 110px); opacity: 0.06; z-index: 0; pointer-events: none; margin: 10px;"></i>
+      <div class="card-body d-flex flex-column justify-content-center position-relative" style="z-index: 1;">
+        <p class="text-muted mb-1 fs-6 fs-md-5">Total Expenses</p>
+        <p class="fw-semibold text-danger mb-0 fs-5 fs-md-4">KES {{ total_expense }}</p>
+      {% if planned_expense_total > 0 %}
+        <small class="text-muted fst-italic text-body-secondary text-opacity-75" style="font-size: 0.75rem;">
+         KES {{ planned_expense_total }} is upcoming
+        </small>
+      {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Balance -->
+  <div class="col">
+    <div class="card shadow-sm border-0 rounded-4 bg-white position-relative overflow-hidden min-vh-25 p-3 p-md-4"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="<strong>Balance</strong><br>Your income minus your expenses.">
+      <i class="bi bi-graph-up-arrow position-absolute bottom-0 end-0 text-primary"
+         style="font-size: clamp(50px, 10vw, 110px); opacity: 0.06; z-index: 0; pointer-events: none; margin: 10px;"></i>
+      <div class="card-body d-flex flex-column justify-content-center position-relative" style="z-index: 1;">
+        <p class="text-muted mb-1 fs-6 fs-md-5">Balance</p>
+        <p class="fw-semibold text-primary mb-0 fs-5 fs-md-4">KES {{ balance }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!--buttons tab-->
+   <div class="nav nav-pills nav-justified mb-3" id="income-expense-tabs" role="tablist">
+      <button class="nav-link border text-dark shadow-sm" id="incomes-tab"
+              data-bs-toggle="tab" data-bs-target="#incomes-section" type="button" role="tab">
+        <i class="bi bi-cash-stack me-1"></i> Incomes
+      </button>
+      <button class="nav-link border text-dark shadow-sm" id="expenses-tab"
+              data-bs-toggle="tab" data-bs-target="#expenses-section" type="button" role="tab">
+        <i class="bi bi-cart4 me-1"></i> Expenses
+      </button>
+    </div>
+
+<div class="tab-content" id="income-expense-tabs-content">
+
+<!-- Incomes Tab Pane -->
+<div class="tab-pane fade show active" id="incomes-section" role="tabpanel">
+  <form id="bulk-delete-form" method="post" action="{% url 'delete_selected_incomes' %}">
+    {% csrf_token %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <a href="{% url 'add_income' %}" class="btn btn-sm btn-success">
+        <i class="bi bi-plus-circle"></i> Add Income
+      </a>
+      <!-- Bulk Delete Button -->
+      <button type="submit" class="btn btn-sm btn-danger"
+              onclick="return confirm('Are you sure you want to delete selected income(s)?');">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover table-sm small align-middle">
+        <thead class="table-light">
+          <tr class="align-middle text-nowrap">
+            <th><input type="checkbox" id="select-all-incomes"></th>
+            <th>Date</th>
+            <th>Wallet</th>
+            <th>Income</th>
+            <th>Amount</th>
+            <th class="d-none d-md-table-cell">Notes</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for income in incomes %}
+          <tr>
+            <td><input type="checkbox" name="selected_incomes" value="{{ income.id }}"></td>
+            <!--<td>{{ income.date }}</td>-->
+            <td>
+              {{ income.date }}
+              {% if income.is_upcoming %}
+                <span class="badge bg-info ms-1">Upcoming</span>
+              {% endif %}
+            </td>
+
+            <td>{{ income.income_source }}</td>
+
+            <!-- income name + star -->
+            <td>
+              {% if income.is_favourite %}
+                <i class="bi bi-star-fill text-warning me-1"></i>
+              {% endif %}
+              {{ income.category }} - {{ income.subcategory }}
+            </td>
+            
+            <!--<td>-->
+            <!--  <i class="bi {% if income.is_favourite %}bi-star-fill text-warning{% else %}bi-star text-muted{% endif %} me-1"></i>-->
+            <!--  {{ income.category }} - {{ income.subcategory }}-->
+            <!--</td>-->
+
+            <td>KES {{ income.amount }}</td>
+            <td class="d-none d-md-table-cell">{{ income.source }}</td>
+
+            <!-- Actions dropdown -->
+            <td class="text-center">
+              <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0"
+                        style="width: 28px; height: 28px;" 
+                        data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                  <i class="bi bi-three-dots-vertical fs-6"></i>
+                </button>
+
+                
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                  {% if income.subcategory.category.name == "Investment Income" %}
+                    <!-- Locked State -->
+                    <li>
+                      <span class="dropdown-item text-muted d-flex align-items-center pe-none"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="left"
+                            title="This income record cannot be edited.">
+                        <i class="bi bi-lock me-2 text-secondary"></i>
+                        Locked
+                      </span>
+                    </li>
+                  {% else %}
+                    <!-- Normal Actions -->
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'edit_income' income.id %}">
+                        <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'duplicate_income' income.id %}">
+                        <i class="bi bi-files me-2 text-success"></i> Reapply
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'toggle_favourite_income' income.id %}">
+                        <i class="bi {% if income.is_favourite %}bi-star-fill text-warning{% else %}bi-star{% endif %} me-2"></i>
+                        {% if income.is_favourite %}Remove Bookmark{% else %}Bookmark{% endif %}
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">
+                <i class="bi bi-info-circle fs-3 mb-2 d-block"></i>
+                No incomes logged yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+        <!-- INCOMES PAGINATION -->
+        {% if incomes.has_other_pages %}
+        <nav class="mt-2">
+          <ul class="pagination pagination-sm justify-content-center align-items-center">
+        
+            {# First page #}
+            {% if incomes.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page=1">
+                  <i class="bi bi-chevron-double-left"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Previous page #}
+            {% if incomes.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ incomes.previous_page_number }}">
+                  <i class="bi bi-chevron-left"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Page indicator #}
+            <li class="page-item disabled">
+              <span class="page-link">Page {{ incomes.number }} of {{ incomes.paginator.num_pages }}</span>
+            </li>
+        
+            {# Next page #}
+            {% if incomes.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ incomes.next_page_number }}">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Last page #}
+            {% if incomes.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ incomes.paginator.num_pages }}">
+                  <i class="bi bi-chevron-double-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+              </li>
+            {% endif %}
+        
+          </ul>
+        </nav>
+        {% endif %}
+    </div>
+    
+  </form>
+</div>
+
+
+
+<!-- Expenses Tab Pane -->
+<div class="tab-pane fade" id="expenses-section" role="tabpanel">
+  <form id="bulk-delete-expenses-form" method="post" action="{% url 'delete_selected_expenses' %}">
+    {% csrf_token %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <a href="{% url 'add_expense' %}" class="btn btn-sm btn-danger">
+        <i class="bi bi-dash-circle"></i> Add Expense
+      </a>
+      <!-- Bulk Delete Button -->
+      <button type="submit" class="btn btn-sm btn-danger"
+              onclick="return confirm('Are you sure you want to delete selected expense(s)?');">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover table-sm small align-middle">
+        <thead class="table-light">
+          <tr class="align-middle text-nowrap">
+            <th><input type="checkbox" id="select-all-expenses"></th>
+            <th>Date</th>
+            <th>Wallet</th>
+            <th>Expense</th>
+            <th>Amount</th>
+            <th class="d-none d-md-table-cell">Notes</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expense in expenses %}
+          <tr>
+            <td><input type="checkbox" name="selected_expenses" value="{{ expense.id }}"></td>
+            <!--<td>{{ expense.date }}</td>-->
+            
+              <td>
+                {{ expense.date }}
+                {% if expense.is_planned %}
+                  <span class="badge bg-info ms-1">Upcoming</span>
+                {% endif %}
+              </td>
+            <td>{{ expense.source }}</td>
+
+            <!-- Expense name + star -->
+            <td>
+              {% if expense.is_favourite %}
+                <i class="bi bi-star-fill text-warning me-1"></i>
+              {% endif %}
+              {{ expense.subcategory }}
+            </td>
+
+            <!--<td>-->
+            <!--  <i class="bi {% if expense.is_favourite %}bi-star-fill text-warning{% else %}bi-star text-muted{% endif %} me-1"></i>-->
+            <!--  {{ expense.subcategory }}-->
+            <!--</td>-->
+
+            <td>KES {{ expense.amount }}</td>
+            <td class="d-none d-md-table-cell">{{ expense.description }}</td>
+
+            <!-- Actions dropdown -->
+            <td class="text-center">
+              <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0"
+                        style="width: 28px; height: 28px;" 
+                        data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                  <i class="bi bi-three-dots-vertical fs-6"></i>
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                  {% if expense.subcategory.category.is_savings_generated or expense.subcategory.category.is_loan_generated or expense.subcategory.category.name == "Investments" %}
+                    <!-- Locked State -->
+                    <li>
+                      <span class="dropdown-item text-muted d-flex align-items-center pe-none"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="left"
+                            title="This transaction cannot be edited.">
+                        <i class="bi bi-lock me-2 text-secondary"></i>
+                        Locked
+                      </span>
+                    </li>
+                  {% else %}
+                    <!-- Normal Actions -->
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'edit_expense' expense.id %}">
+                        <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'duplicate_expense' expense.id %}">
+                        <i class="bi bi-files me-2 text-success"></i> Reapply
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="{% url 'toggle_favourite_expense' expense.id %}">
+                        <i class="bi {% if expense.is_favourite %}bi-star-fill text-warning{% else %}bi-star{% endif %} me-2"></i>
+                        {% if expense.is_favourite %}Remove Bookmark{% else %}Bookmark{% endif %}
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">
+                <i class="bi bi-info-circle fs-3 mb-2 d-block"></i>
+                No expenses logged yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+        <!-- EXPENSES PAGINATION -->
+        {% if expenses.has_other_pages %}
+        <nav class="mt-2">
+          <ul class="pagination pagination-sm justify-content-center align-items-center">
+        
+            {# First page #}
+            {% if expenses.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page=1">
+                  <i class="bi bi-chevron-double-left"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Previous page #}
+            {% if expenses.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expenses.previous_page_number }}">
+                  <i class="bi bi-chevron-left"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Page indicator #}
+            <li class="page-item disabled">
+              <span class="page-link">Page {{ expenses.number }} of {{ expenses.paginator.num_pages }}</span>
+            </li>
+        
+            {# Next page #}
+            {% if expenses.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expenses.next_page_number }}">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+              </li>
+            {% endif %}
+        
+            {# Last page #}
+            {% if expenses.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expenses.paginator.num_pages }}">
+                  <i class="bi bi-chevron-double-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+              </li>
+            {% endif %}
+        
+          </ul>
+        </nav>
+        {% endif %}
+    </div>
+  </form>
+</div>
+
+</div>
+
+</div>
+
+    
+<div class="tab-pane fade " id="chart-summary" role="tabpanel" aria-labelledby="chart-summary-tab">
+
+    <div class="card shadow-sm mb-4 bg-white border-0">
+      <div class="card-body">
+        <!-- Donut Chart with Legend -->
+        <div class="row mt-4">
+          <!-- Chart -->
+          <div class="col-md-9 bg-transparent rounded-3 d-flex justify-content-center align-items-center" 
+               style="overflow: hidden; min-height: 300px; position: relative;">
+               
+            <!-- Faint Icon -->
+            <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-muted" 
+               style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+               
+            <!-- Chart -->
+            <canvas id="subcategoryChart" 
+                    style="max-width: 100%; max-height: 500px; z-index: 1; position: relative;"></canvas>
+          </div>
+        
+          <!-- Legend -->
+          <div class="col-md-3 bg-white rounded-3 p-3">
+            <ul id="subcategoryList" class="list-unstyled mb-4"></ul>
+          </div>
+        </div>
+ 
+
+
+        <div class="row mt-4">
+        <div class="col-md-6 text-center bg-transparent rounded-3 d-flex justify-content-center align-items-center" style="overflow: hidden; min-height: 300px;">
+            
+              <div class="row g-4 align-items-center">
+        
+                <div class="col-6 d-flex align-items-center gap-3">
+                  <i class="bi bi-calendar3 fs-3 text-primary"></i>
+                  <div>
+                    <div class="small text-muted">Average Monthly Spending</div>
+                    <div class="fw-semibold">KES {{ average_monthly_spending|floatformat:2 }}</div>
+                  </div>
+                </div>
+        
+                <div class="col-6 d-flex align-items-center gap-3">
+                  <i class="bi bi-calendar-day fs-3 text-success"></i>
+                  <div>
+                    <div class="small text-muted">Average Daily Spending</div>
+                    <div class="fw-semibold">KES {{ average_daily_spending|floatformat:2 }}</div>
+                  </div>
+                </div>
+        
+                <div class="col-6 d-flex align-items-center gap-3">
+                  <i class="bi bi-tag fs-3 text-warning"></i>
+                  <div>
+                    <div class="small text-muted">Most Frequent Expense</div>
+                    <div class="fw-semibold">{{ most_frequent_subcategory }}</div>
+                    <div class="small text-muted">{{ most_freq_subcat_txn_count }} transactions</div>
+                  </div>
+                </div>
+        
+                <div class="col-6 d-flex align-items-center gap-3">
+                  <i class="bi bi-exclamation-triangle fs-3 text-danger"></i>
+                  <div>
+                    <div class="small text-muted">Expense with Largest Outflow</div>
+                    <div class="fw-semibold">{{ largest_subcategory }} (KES {{ largest_outflow|floatformat:2 }})</div>
+                  </div>
+                </div>
+        
+              </div>
+        </div> 
+        
+        <div class="col-md-6 bg-transparent rounded-3 p-3">
+              <!-- Category Pie Chart below legend -->
+              <div class="position-relative text-center" style="height: 300px; overflow: hidden;">
+                <i class="bi bi-pie-chart-fill position-absolute top-50 start-50 translate-middle text-muted"
+                   style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+                <canvas id="categoryPieChart" class="w-100 h-100" style="z-index: 1; position: relative;"></canvas>
+              </div>
+         </div> 
+       
+    </div> 
+
+        
+<div class="container-fluid">
+<div class="row mt-4">
+
+  <!-- Total Income Breakdown -->
+  <div class="col-lg-6 col-md-12 mb-4">
+    <div class="bg-transparent rounded-3 p-3 d-flex align-items-center h-100">
+      <div class="position-relative text-center w-100" style="height: 400px; overflow: hidden;">
+        <i class="bi bi-bar-chart-fill position-absolute top-50 start-50 translate-middle text-muted"
+           style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+        <canvas id="stackedIncomeChart" class="w-100 h-100" style="z-index: 1; position: relative;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Other chart -->
+  <div class="col-lg-6 col-md-12 mb-4">
+    <div class="bg-transparent rounded-3 p-3 d-flex align-items-center h-100">
+      <div class="position-relative text-center w-100" style="height: 400px; overflow: hidden;">
+        <i class="bi bi-bar-chart-fill position-absolute top-50 start-50 translate-middle text-muted"
+           style="font-size: 180px; opacity: 0.05; z-index: 0; pointer-events: none;"></i>
+        <canvas id="incomeExpenseChart" class="w-100 h-100" style="z-index: 1; position: relative;"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+
+<br>
+      </div>
+    </div>
+
+  
+  
+  </div>
+</div>
+  
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.forEach(popoverTriggerEl => {
+      new bootstrap.Popover(popoverTriggerEl)
+    })
+
+})
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = document.querySelectorAll('#dashboardTabs .nav-link');
+
+    function updateTabStyles() {
+      tabButtons.forEach(btn => {
+        if (btn.classList.contains('active')) {
+          btn.classList.add('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+          btn.classList.remove('bg-light', 'text-muted');
+        } else {
+          btn.classList.remove('bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+          btn.classList.add('bg-light', 'text-muted');
+        }
+      });
+    }
+
+    // Initial setup on page load
+    updateTabStyles();
+
+    // Also update styles on click
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', updateTabStyles);
+    });
+  });
+</script>
+
+<script>
+  const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+  const income = {{ total_income|default:0 }};
+  const expense = {{ total_expense|default:0 }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Income', 'Expense'],
+      datasets: [
+        {
+          label: 'Income',
+          data: [income, 0],
+          backgroundColor: '#198754',
+          borderRadius: 6,
+          barThickness: 30
+        },
+        {
+          label: 'Expense',
+          data: [0, expense],
+          backgroundColor: '#dc3545',
+          borderRadius: 6,
+          barThickness: 30
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Total Income vs Total Expense',
+          font: { size: 16 }
+        },
+        legend: {
+          display: true,
+          position: 'bottom'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `KES ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'KES ' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const subcategoryData = JSON.parse('{{ subcategory_expenses_json|escapejs }}');
+
+    // Dynamic color generator
+    function generateColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = Math.floor((360 / count) * i); 
+            colors.push(`hsl(${hue}, 70%, 50%)`); // vibrant colors
+        }
+        return colors;
+    }
+
+    const labels = Object.keys(subcategoryData);
+    const values = Object.values(subcategoryData);
+
+    const total = values.reduce((a, b) => a + b, 0);
+
+    const ctx = document.getElementById('subcategoryChart').getContext('2d');
+
+    // Custom plugin to draw centered text inside donut
+    const centerTextPlugin = {
+        id: 'centerText',
+    };
+
+    // Generate colors based on number of labels
+    const colors = generateColors(labels.length);
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '60%',
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Total Spending Breakdown',
+                    font: { size: 16 }
+                },
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: KES ${value.toLocaleString()} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [centerTextPlugin]
+    });
+
+    // Populate right-hand legend list with amounts and percentages
+    const listContainer = document.getElementById('subcategoryList');
+    listContainer.innerHTML = '';
+    labels.forEach((label, index) => {
+        const percent = total > 0 ? ((values[index] / total) * 100).toFixed(1) : 0;
+        const li = document.createElement('li');
+        li.classList.add('d-flex', 'align-items-center', 'mb-2');
+        li.innerHTML = `
+            <span style="display:inline-block; width:16px; height:16px; background-color:${colors[index]}; border-radius:3px; margin-right:8px;"></span>
+            <span class="flex-grow-1">${label}</span>
+            <span class="fw-semibold text-muted">
+                KES ${values[index].toLocaleString()} (${percent}%)
+            </span>
+        `;
+        listContainer.appendChild(li);
+    });
+});
+</script>
+
+
+
+
+<script>
+  const categoryDataRaw = {{ category_expenses_json|safe }};
+  const categoryLabels = Object.keys(categoryDataRaw);
+  const categoryData = Object.values(categoryDataRaw);
+
+  const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+
+  new Chart(categoryCtx, {
+    type: 'pie',
+    data: {
+      labels: categoryLabels,
+      datasets: [{
+        data: categoryData,
+        backgroundColor: ['#0d6efd', '#dc3545', '#ffc107', '#198754', '#6f42c1', '#20c997'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Total Spending by Category'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const value = context.parsed;
+              const percent = ((value / total) * 100).toFixed(1);
+              return `${context.label}: KES ${value} (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+
+
+<script>
+  setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => alert.classList.add('fade', 'show'));
+    setTimeout(() => alerts.forEach(alert => alert.remove()), 3000);
+  }, 3000);
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (toggle) {
+      const icon = toggle.querySelector('.toggle-icon');
+      const targetId = toggle.getAttribute('href');
+      const target = document.querySelector(targetId);
+
+      if (target && icon) {
+        target.addEventListener('hide.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-up');
+          icon.classList.add('bi-chevron-down');
+        });
+
+        target.addEventListener('show.bs.collapse', () => {
+          icon.classList.remove('bi-chevron-down');
+          icon.classList.add('bi-chevron-up');
+        });
+      }
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('#income-expense-tabs .nav-link');
+
+    function activateTab(tab) {
+      tabs.forEach(t => {
+        t.classList.remove('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+        t.classList.add('bg-light', 'text-muted');
+      });
+      tab.classList.add('active', 'bg-white', 'text-dark', 'fw-semibold', 'border', 'border-dark');
+      tab.classList.remove('bg-light', 'text-muted');
+    }
+
+    // Restore last active tab from localStorage (scoped to this tab set)
+    const lastTabId = localStorage.getItem('lastIncomeExpenseTab');
+    const defaultTab = lastTabId ? document.getElementById(lastTabId) : tabs[0];
+    if (defaultTab) {
+      activateTab(defaultTab);
+      const targetId = defaultTab.getAttribute('data-bs-target');
+      const targetSection = document.querySelector(targetId);
+      if (targetSection) {
+        // Only reset tab panes inside the same container
+        const container = targetSection.closest('.tab-content');
+        if (container) {
+          container.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+        }
+        targetSection.classList.add('show', 'active');
+      }
+    }
+
+    // Save clicked tab ID
+    tabs.forEach(tab => {
+      tab.addEventListener('shown.bs.tab', function () {
+        activateTab(this);
+        localStorage.setItem('lastIncomeExpenseTab', this.id);
+      });
+    });
+  });
+</script>
+
+<script>
+const stackedIncomeLabels = JSON.parse('{{ stacked_income_labels|escapejs }}');
+const stackedIncomeDatasets = JSON.parse('{{ stacked_income_datasets|escapejs }}');
+
+// Dynamically decide bar thickness
+const barCount = stackedIncomeLabels.length;
+let barThickness = 20; // default
+
+if (window.innerWidth < 768) {
+    barThickness = Math.max(28, 200 / barCount); // thicker bars on small screens
+}
+
+new Chart(document.getElementById('stackedIncomeChart'), {
+    type: 'bar',
+    data: {
+        labels: stackedIncomeLabels,
+        datasets: stackedIncomeDatasets
+    },
+    options: {
+        indexAxis: 'y', // always horizontal
+        responsive: true,
+        maintainAspectRatio: false,
+        barThickness: barThickness,
+        plugins: {
+            title: {
+              display: true,
+              text: 'Total Income Distribution'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        let value = context.raw;
+                        return `${context.dataset.label}: Ksh ${value.toLocaleString()}`;
+                    }
+                }
+            },
+            legend: { position: 'bottom' }
+        },
+        scales: {
+            x: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'Ksh ' + value.toLocaleString();
+                    }
+                }
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    autoSkip: false // keep all labels visible
+                }
+            }
+        }
+    }
+});
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function handleSelectAll(masterId, itemName) {
+      const masterCheckbox = document.getElementById(masterId);
+      const checkboxes = document.querySelectorAll(`input[name='${itemName}']`);
+
+      if (!masterCheckbox) return;
+
+      // Toggle all when master is clicked
+      masterCheckbox.addEventListener("change", function() {
+        checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+      });
+
+      // Update master when individual checkboxes change
+      checkboxes.forEach(cb => {
+        cb.addEventListener("change", function() {
+          if (!cb.checked) {
+            masterCheckbox.checked = false;
+          } else if (Array.from(checkboxes).every(c => c.checked)) {
+            masterCheckbox.checked = true;
+          }
+        });
+      });
+    }
+
+    // Apply to both incomes and expenses
+    handleSelectAll("select-all-incomes", "selected_incomes");
+    handleSelectAll("select-all-expenses", "selected_expenses");
+  });
+</script>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends 'budget/base.html' %}
+{% block title %}Set Budget{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-5">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-journal-check fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">{% if editing %}Edit Budget{% else %}Set Budget{% endif %}</h5>
+
+          <!-- Info icon with popover pushed right -->
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0" 
+                  tabindex="0"
+                  data-bs-toggle="popover" 
+                  data-bs-trigger="focus" 
+                  data-bs-placement="left" 
+                  data-bs-html="true"
+                  title="Set a Monthly Limit for each of your Expenses"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Select any date in the month you wish to set spending limit.</li>
+                      <li>Select the expense you'd like to set spending limit. Can't find it in the dropdown? Add your own.</li>
+                      <li>Once budget is set, you may view or edit its details anytime on the budgets page.</li>
+                      <li>Expenses are tracked against the budgets you’ve set for them, visible on the Budget vs Spent page.</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+          
+        </div>
+        <div class="card-body">
+          {% if duplicate_warning %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              {{ duplicate_warning }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endif %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Budget Info</h6>
+              <div class="mb-3">
+                <label for="id_month" class="form-label">Budget Month Date</label>
+                {{ form.month }}
+              </div>
+              <div class="mb-3">
+                <label for="id_subcategory" class="form-label">Expense Item to Budget</label>
+                <div class="input-group">
+                  {{ form.subcategory }}
+                  <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addSubCategoryModal">+</button>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="id_forecasted_amount" class="form-label">Budgeted Amount (KES)</label>
+                {{ form.forecasted_amount }}
+              </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span class="spinner-border spinner-border-sm d-none" id="submitSpinner" role="status" aria-hidden="true"></span>
+                Save Budget
+              </button>
+              <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add Subcategory Modal -->
+<div class="modal fade" id="addSubCategoryModal" tabindex="-1" aria-labelledby="addSubCategoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="addSubcategoryForm" class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="addSubCategoryLabel">Add Expense Item to Budget</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body bg-light">
+        <!-- Expense Type Dropdown -->
+        <div class="mb-3">
+          <label for="newSubcategoryCategory" class="form-label">Expense Type</label>
+          <select id="newSubcategoryCategory" class="form-select" required>
+            {% for cat in form.fields.category.queryset %}
+              {% if not cat.is_savings_generated and not cat.is_loan_generated and cat.name != "Investments" %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+              {% endif %}
+            {% empty %}
+              <option disabled>No valid categories available</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Subcategory Name -->
+        <div class="mb-3">
+          <label for="newSubcategoryName" class="form-label">Expense Name</label>
+          <input type="text" class="form-control" id="newSubcategoryName" placeholder="Input your expense" required>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Add</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<!-- Add Subcategory Modal -->
+<!--<div class="modal fade" id="addSubCategoryModal" tabindex="-1" aria-labelledby="addSubCategoryLabel" aria-hidden="true">-->
+<!--  <div class="modal-dialog">-->
+<!--    <form id="addSubcategoryForm" class="modal-content">-->
+<!--      <div class="modal-header">-->
+<!--        <h5 class="modal-title" id="addSubCategoryLabel">Add Expense Item to Budget</h5>-->
+<!--        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--      </div>-->
+<!--      <div class="modal-body bg-light">-->
+<!--        <label for="newSubcategoryCategory" class="form-label">Expense Type</label>-->
+<!--        <select id="newSubcategoryCategory" class="form-select mb-3" required>-->
+<!--          {% for cat in form.fields.category.queryset %}-->
+<!--            <option value="{{ cat.id }}">{{ cat.name }}</option>-->
+<!--          {% empty %}-->
+<!--            <option disabled>No valid categories available</option>-->
+<!--          {% endfor %}-->
+<!--        </select>-->
+
+<!--        <label for="newSubcategoryName" class="form-label">Expense</label>-->
+<!--        <input type="text" class="form-control" id="newSubcategoryName" required>-->
+<!--      </div>-->
+<!--      <div class="modal-footer">-->
+<!--        <button type="submit" class="btn btn-success">Add</button>-->
+<!--      </div>-->
+<!--    </form>-->
+<!--  </div>-->
+<!--</div>-->
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
+  });
+</script>
+
+
+<!-- Script: Add subcategory via modal -->
+<script>
+  document.getElementById('addSubcategoryForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('newSubcategoryName').value.trim();
+    const categoryId = document.getElementById('newSubcategoryCategory').value;
+
+    fetch("{% url 'add_subcategory' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({
+        name: name,
+        category_id: categoryId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const select = document.getElementById('id_subcategory');
+        const option = new Option(data.name, data.id, true, true);
+        select.add(option);
+        bootstrap.Modal.getInstance(document.getElementById('addSubCategoryModal')).hide();
+        document.getElementById('newSubcategoryName').value = '';
+      } else {
+        alert(data.error || 'Could not add subcategory.');
+      }
+    });
+  });
+</script>
+
+<!-- Script: Auto-dismiss alerts -->
+<script>
+  setTimeout(function () {
+    document.querySelectorAll('.alert').forEach(alert => {
+      alert.classList.add('fade', 'show');
+      setTimeout(() => alert.remove(), 3000);
+    });
+  }, 3000);
+</script>
+
+<!-- Submit Spinner -->
+<script>
+  document.querySelector('form').addEventListener('submit', () => {
+    document.getElementById('submitSpinner').classList.remove('d-none');
+  });
+</script>
+{% endblock %}

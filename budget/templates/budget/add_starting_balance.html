@@ -1,0 +1,182 @@
+{% extends 'budget/base.html' %}
+{% block title %}Add Starting Balance{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-wallet2 fs-4 me-2 text-success"></i>
+          <h5 class="mb-0 fw-semibold">Add to Wallets</h5>
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0" 
+                  tabindex="0"
+                  data-bs-toggle="popover" 
+                  data-bs-trigger="focus" 
+                  data-bs-placement="left" 
+                  data-bs-html="true"
+                  title="Add to Wallets"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                        <li>Add money to reflect actual amounts in your wallets.</li>
+                        <li>If your wallet isn’t listed, add it with the + button.</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+
+        <div class="card-body">
+          <form method="post" id="startingBalanceForm">
+            {% csrf_token %}
+            <div id="balanceRows">
+              <div class="bg-light rounded p-3 mb-3 balance-row">
+                <div class="row align-items-end">
+                  <div class="col-md-6">
+                    <label for="wallet_0" class="form-label">Wallet</label>
+                    <div class="input-group">
+                      <select name="wallet_0" id="wallet_0" class="form-select">
+                        <option value="">Select Wallet...</option>
+                        {% for wallet in wallets %}
+                          <option value="{{ wallet.id }}">{{ wallet.name }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addSourceModal">+</button>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mt-3 mt-md-0">
+                    <label for="amount_0" class="form-label">Amount (KES)</label>
+                    <input type="number" step="0.01" name="amount_0" id="amount_0" class="form-control" placeholder="e.g. 5000">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex mb-3">
+              <button type="button" class="btn btn-outline-success me-2" id="addRowBtn">+ Add to Another Wallet</button>
+            </div>
+
+            <input type="hidden" name="form-TOTAL_FORMS" id="totalForms" value="1">
+
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-success">
+                Save
+              </button>
+              <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Wallet Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addSourceForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addSourceModalLabel">Add Wallet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <input type="text" name="name" id="sourceName" class="form-control" placeholder="Wallet name" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Popover
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
+
+    // Dynamic rows
+    const balanceRows = document.getElementById('balanceRows');
+    const addBtn = document.getElementById('addRowBtn');
+    let totalForms = 1;
+
+    addBtn.addEventListener('click', function() {
+        const lastRow = balanceRows.querySelector('.balance-row:last-child');
+        const newRow = lastRow.cloneNode(true);
+
+        // Clear values and update name/id
+        const inputs = newRow.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.tagName === 'INPUT') input.value = '';
+            if (input.tagName === 'SELECT') input.selectedIndex = 0;
+
+            const nameParts = input.name.split('_');
+            const idParts = input.id.split('_');
+            input.name = nameParts[0] + '_' + totalForms;
+            input.id = idParts[0] + '_' + totalForms;
+        });
+
+        balanceRows.appendChild(newRow);
+        totalForms++;
+        document.getElementById('totalForms').value = totalForms;
+    });
+
+    
+});
+</script>
+
+<script>
+document.getElementById('addSourceForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('sourceName');
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  fetch("{% url 'add_expense_source' %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({ name })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Wallet added successfully, update all relevant selects
+      const selects = document.querySelectorAll('select[name^="wallet_"], #id_source');
+      selects.forEach(select => {
+        const option = new Option(data.name, data.id, true, true);
+        select.add(option);
+      });
+
+      nameInput.value = '';
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addSourceModal'));
+      modal.hide();
+    } else if (data.error) {
+      // Show specific error from the view (e.g., already exists)
+      alert(data.error);
+    } else {
+      alert('Could not add wallet.');
+    }
+  })
+  .catch(err => console.error('Error adding wallet:', err));
+});
+</script>
+
+
+{% endblock %}

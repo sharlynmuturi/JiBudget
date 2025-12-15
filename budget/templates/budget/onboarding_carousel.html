@@ -1,0 +1,314 @@
+{% extends 'budget/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block title %}Quick Tour{% endblock %}
+
+{% block body_class %}no-sidebar{% endblock %}
+
+{% block content %}
+<style>
+  body.no-sidebar nav.sidebar,
+  body.no-sidebar #mobileSidebar {
+    display: none !important;
+  }
+
+  body.no-sidebar main {
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.no-sidebar .d-flex {
+    flex-direction: column !important;
+  }
+
+    body.no-sidebar nav.navbar.d-md-none {
+      display: none !important;
+    }
+
+
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+  }
+
+  .animate-slide-in-top {
+    animation: slideInTop 1s ease-out;
+  }
+
+  .animate-slide-in-bottom {
+    animation: slideInBottom 1s ease-out;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideInTop {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideInBottom {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Add this to background shapes if you're not interacting with them */
+  .absolute.inset-0 {
+    pointer-events: none;
+  }
+
+</style>
+
+<div x-data="onboarding()" class="min-h-screen flex flex-col w-full max-w-5xl mx-auto px-6 text-gray-800 font-sans relative">
+
+  <!-- Background shapes -->
+  <div class="absolute inset-0 -z-10 overflow-hidden">
+    <div class="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-blue-300 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+    <div class="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tr from-green-100 to-green-300 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+  </div>
+
+  <!-- Slides Wrapper with touch swipe support -->
+    <div
+      class="flex-grow flex items-center justify-center w-full overflow-hidden px-4"
+      @touchstart="handleTouchStart($event)"
+      @touchmove="handleTouchMove($event)"
+      @touchend="handleTouchEnd"
+    >
+    
+    <template x-for="(slide, index) in slides" :key="index">
+      <div
+        x-show="currentSlide === index"
+        x-transition:enter="transition transform ease-out duration-1000"
+        x-transition:enter-start="opacity-0 translate-y-12 scale-90"
+        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+        x-transition:leave="transition transform ease-in duration-700"
+        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+        x-transition:leave-end="opacity-0 translate-y-12 scale-90"
+        class="flex flex-col gap-6 items-center text-center animate-fade-in"
+      >
+
+        <div class="space-y-3 transition-all duration-1000 ease-in-out opacity-90 w-full animate-slide-in-top">
+          <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight" x-text="slide.title"></h2>
+          <p class="text-lg leading-relaxed text-gray-600" x-text="slide.text"></p>
+        </div>
+
+        <div class="w-full grid gap-4 animate-slide-in-bottom"
+             :class="Array.isArray(slide.image) ? 'grid-cols-1 md:grid-cols-2' : 'flex justify-center'">
+          <template x-if="!Array.isArray(slide.image)">
+            <img :src="slide.image"
+                 alt="Slide image"
+                 class="w-full max-w-xl mx-auto rounded-2xl border border-gray-200 bg-white shadow-lg hover:shadow-xl transform transition duration-700 ease-in-out hover:scale-[1.03]">
+          </template>
+          <template x-if="Array.isArray(slide.image)">
+            <template x-for="(imgSrc, imgIndex) in slide.image" :key="imgIndex">
+              <img :src="imgSrc"
+                   alt="Slide image"
+                   class="w-full max-w-xl mx-auto rounded-2xl border border-gray-200 bg-white shadow-lg hover:shadow-xl transform transition duration-700 ease-in-out hover:scale-[1.03]">
+            </template>
+          </template>
+        </div>
+
+      </div>
+    </template>
+  </div>
+
+  <!-- Navigation pinned to bottom -->
+  <div class="sticky bottom-0 bg-white/90 backdrop-blur-md shadow-md z-10 w-full py-4">
+    <div class="flex flex-col items-center space-y-3 w-full px-4">
+
+      <div class="flex justify-between items-center w-full max-w-md">
+        <button @click="currentSlide = Math.max(currentSlide - 1, 0)"
+                :disabled="currentSlide === 0"
+                class="px-2 py-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          ← Back
+        </button>
+
+        <div class="flex space-x-1.5">
+          <template x-for="(slide, index) in slides" :key="index">
+            <div class="w-2.5 h-2.5 rounded-full transition-transform duration-300 cursor-pointer"
+                 :class="currentSlide === index ? 'bg-blue-600 scale-110' : 'bg-gray-300'"
+                 @click="currentSlide = index"></div>
+          </template>
+        </div>
+
+        <template x-if="currentSlide < slides.length - 1">
+          <button @click="currentSlide++"
+                  class="px-2 py-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow hover:shadow-md transition-all">
+            Next →
+          </button>
+        </template>
+
+        <template x-if="currentSlide === slides.length - 1">
+          <a href="{% url 'my_dashboard' %}"
+             class="px-2 py-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-green-500 to-green-600 text-white shadow hover:shadow-md transition-all">
+             Go to Dashboard →
+          </a>
+        </template>
+      </div>
+
+      <a href="{% url 'my_dashboard' %}" class="text-sm text-gray-500 underline hover:text-gray-700 transition">
+        Skip to Dashboard
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<!-- Alpine.js Init Script -->
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('onboarding', () => ({
+      currentSlide: 0,
+      autoplayInterval: null,
+      touchStartX: 0,
+      touchEndX: 0,
+
+      slides: [
+        {
+          image: '/static/budget/screenshots/logoicon-192x192.png',
+          title: 'Hi there! Welcome to JiBudget',
+          text: `Your pocket-friendly planner for all things money. Let’s show you around - it’ll only take a minute.`
+        },
+        {
+          image: '/static/budget/screenshots/dashboardtour4.png',
+          title: 'Everything, At a Glance',
+          text: `JiBudget pulls all your finances into one clean, visual space - budgets, income, spending, savings, loans and investments. The goal? Smarter decisions, without the spreadsheets.`
+        },
+
+        {
+          image: [
+            '/static/budget/screenshots/transactionstour6.png',
+            '/static/budget/screenshots/transactionstour5.png',
+            // '/static/budget/screenshots/transactionstour3.png',
+            // '/static/budget/screenshots/insightstour6.png',
+          ],
+          title: 'Track Your Transactions',
+          text: `Want to know how your money moves? What you earned, what you spent, and when? It’s all in one place - neat, searchable, always up to date. JiBudget brings your finances to life with clear, beautiful, and insightful charts.`
+        },
+        {
+          image: [
+            '/static/budget/screenshots/incometour.png',
+            '/static/budget/screenshots/expensetour.png',
+          ],
+          title: 'Log your income, record expenses in real-time',
+          text: `Think of it as your money journal - quickly jot down income as it comes in and log expenses in real time. Bookmark frequent transactions and record them again in a single click. Keep track of your day-to-day finances effortlessly.`
+        },
+        // {
+        //   image: [
+        //     '/static/budget/screenshots/walletstour1.png',
+        //     '/static/budget/screenshots/walletstour3.png',
+        //   ],
+        //   title: 'Organize your money using wallets',
+        //   text: `Got money in different places? No worries - Wallets help you keep track of it all, whether it’s in your bank, mobile money, or cash.`
+        // },
+
+        {
+          image: [
+            '/static/budget/screenshots/budgetstour.png',
+            '/static/budget/screenshots/budgetstour2.png'
+          ],
+          title: 'Plan Your Spending',
+          text: `Kick off each month with a game plan for your money. Set spending limits, track your progress, and tweak things as life unfolds. Easily create this month’s budget by reusing previous months' - in a single click.`
+        },
+        {
+          image: [
+            '/static/budget/screenshots/savingstour6.png',
+            '/static/budget/screenshots/savingstour5.png'
+          ],
+          title: 'Open savings jars for your goals',
+          text: `Setting aside your income for savings? Saving for rent, a trip, or a rainy day? Create a jar for each goal. Every time you set aside funds for saving, log it - and watch your progress grow.`
+        },
+
+        {
+          image: '/static/budget/screenshots/investmenthome.png',
+          title: 'Track Your Investments with Ease',
+          text: `Keep tabs on all your investments - chamas, SACCOs, stocks, and more - in one place. See the latest stock prices, explore interactive charts, and know exactly how your funds are performing.`
+        },
+        {
+          image: '/static/budget/screenshots/loantour.png',
+          title: 'Track. Pay. Save.',
+          text: `Open accounts for your debts and loans. JiBudget helps you keep an eye on your balances, track repayment progress - try the simulation tool to plan extra payments and save on interest.`
+        },
+        {
+          image: '/static/budget/screenshots/vitalstour1.png',
+          title: 'Check Your Financial Health ',
+          text: `See how long your money can last, what’s liquid, and if spending matches income. Record every income and expense to get the clearest picture - stay in control, avoid surprises, and grow your financial cushion.`
+        },
+
+        {
+          image: '/static/budget/screenshots/tipstour12.png',
+          title: 'Helpful Tips Along the Way',
+          text: `Need a hand? JiBudget offers handy instant tips throughout the app to guide you. Hover or tap the “?” icons for clear explanations, and smart guidance as you manage your money.`
+        },
+        {
+          image: '/static/budget/screenshots/logoicon-192x192.png',
+          title: 'Ready to Get Started?',
+          text: `JiBudget is built for real life. Simple, powerful, and just for you.`
+        }
+      ],
+
+      init() {
+        this.startAutoplay();
+      },
+    
+      startAutoplay() {
+        this.stopAutoplay();
+        this.autoplayInterval = setInterval(() => {
+          this.nextSlide();
+        }, 7000);
+      },
+    
+      stopAutoplay() {
+        if (this.autoplayInterval) {
+          clearInterval(this.autoplayInterval);
+          this.autoplayInterval = null;
+        }
+      },
+    
+      restartAutoplay() {
+        this.stopAutoplay();
+        setTimeout(() => {
+          this.startAutoplay();
+        }, 3000); // Delay restart after 3s
+      },
+    
+      nextSlide() {
+        this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+      },
+    
+      prevSlide() {
+        this.currentSlide =
+          (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+      },
+    
+      handleTouchStart(event) {
+        this.stopAutoplay(); // Pause on swipe start
+        this.touchStartX = event.changedTouches[0].screenX;
+      },
+    
+      handleTouchMove(event) {
+        this.touchEndX = event.changedTouches[0].screenX;
+      },
+    
+      handleTouchEnd() {
+        const threshold = 80;
+        const diff = this.touchStartX - this.touchEndX;
+    
+        if (diff > threshold) {
+          this.nextSlide();
+        } else if (diff < -threshold) {
+          this.prevSlide();
+        }
+    
+        this.restartAutoplay(); // Resume after user swipe
+      }
+    }));
+  });
+</script>
+{% endblock %}

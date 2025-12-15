@@ -1,0 +1,305 @@
+{% extends "budget/base.html" %}
+{% block title %}Add Investment{% endblock %}
+
+{% block content %}
+
+
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+
+        <!-- Card Header -->
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-wallet2 fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">
+            {% if account %}Update{% else %}Add{% endif %} Investment Account
+          </h5>
+
+            <button type="button" 
+                    class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                    tabindex="0" 
+                    data-bs-toggle="popover" 
+                    data-bs-trigger="focus" 
+                    data-bs-placement="left"
+                    data-bs-html="true"
+                    title="Investment Account"
+                    data-bs-content="
+                      <ul style='padding-left:1rem; margin-bottom:0;'>
+                        <li>Enter an <strong>account name</strong> and choose the investment type.</li>
+                        <li>For <strong>Stocks / Crypto</strong>, add the ticker symbol to fetch live prices.</li>
+                        <li>Fill in the account details.</li>
+                        <li>Save the account to start tracking its performance on your investment dashboard.</li>
+                      </ul>
+                    ">
+              <i class="bi bi-question-circle fs-4"></i>
+            </button>
+
+        </div>
+
+        <div class="card-body">
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-warning alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- Account Info -->
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Account Details</h6>
+
+              <div class="mb-3">
+                <label for="name" class="form-label">Account Name</label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{{ account.name|default_if_none:'' }}"
+                       placeholder="e.g. Chama, Sacco, MMF, Apple Shares, Bitcoin Wallet, Real Estate Fund" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="asset_type" class="form-label">Type of Investment</label>
+                <select id="asset_type" name="asset_type" class="form-select" required>
+                  <option value="">Choose investment type...</option>
+                  {% for val, label in form.asset_type.field.choices %}
+                    <option value="{{ val }}" {% if account.asset_type == val %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- Stock / Crypto Symbol -->
+            <div class="bg-light rounded p-3 mb-3" id="symbolDiv">
+              <h6 class="text-muted mb-2">Ticker / Symbol</h6>
+              <input type="text" class="form-control" id="symbol" name="symbol"
+                     value="{{ account.symbol|default_if_none:'' }}"
+                     placeholder="e.g. AAPL, BTC, SPY">
+              <div class="form-text">Required for stocks, ETF or crypto to fetch live prices.</div>
+            </div>
+
+
+            <!-- Manual Value / NAV -->
+            <div class="bg-light rounded p-3 mb-3" id="manualDiv">
+              <h6 class="text-muted mb-2">Invested</h6>
+              <label for="manual_price" class="form-label">Amount Invested</label>
+              <input type="number" step="0.01" class="form-control" id="manual_price" name="manual_price"
+                     value="{{ account.current_price|default_if_none:'0' }}"
+                     placeholder="e.g. 102.50">
+              <label for="manual_currency" class="form-label mt-2">Currency</label>
+              <input type="text" class="form-control" id="manual_currency" name="manual_currency"
+                     value="{{ account.currency|default_if_none:'KES' }}" placeholder="KES, USD, EUR">
+            </div>
+
+
+            <!-- Real Estate / Other Fields -->
+            <div class="bg-light rounded p-3 mb-3" id="reOtherFields">
+              <h6 class="text-muted mb-2">Income & Expenses</h6>
+
+              <div class="mb-3">
+                <label for="income_so_far" class="form-label">Income Earned So Far</label>
+                <input type="number" step="0.01" class="form-control" id="income_so_far" name="income_so_far"
+                       value="{{ account.income_so_far|default_if_none:'0' }}"
+                       placeholder="e.g. 25000 or 0 if none">
+              </div>
+
+              <div class="mb-3">
+                <label for="expenses_so_far" class="form-label">Expenses Incurred So Far</label>
+                <input type="number" step="0.01" class="form-control" id="expenses_so_far" name="expenses_so_far"
+                       value="{{ account.expenses_so_far|default_if_none:'0' }}"
+                       placeholder="e.g. 5000 or 0 if none">
+              </div>
+            </div>
+
+
+            <!-- Bond Fields -->
+            <div class="bg-light rounded p-3 mb-3" id="bondFields">
+              <h6 class="text-muted mb-2">Bond Details</h6>
+
+              <div class="mb-3">
+                <label for="units_held" class="form-label">No. of Bonds Held</label>
+                <input type="number" step="0.0001" class="form-control" id="units_held_bond" name="units_held"
+                       value="{{ account.units_held|default_if_none:'0' }}"
+                       placeholder="e.g. 10">
+              </div>
+
+
+              <div class="mb-3">
+                <label for="face_value" class="form-label">Face Value per Bond (KES)</label>
+                <input type="number" step="0.01" class="form-control" id="face_value" name="face_value"
+                       value="{{ account.face_value|default_if_none:'' }}"
+                       placeholder="e.g. 5000">
+              </div>
+
+
+              <div class="mb-3">
+                <label for="coupon_rate" class="form-label">Annual Coupon Rate (%)</label>
+                <input type="number" step="0.01" class="form-control" id="coupon_rate" name="coupon_rate"
+                       value="{{ account.coupon_rate|default_if_none:'' }}">
+              </div>
+
+              <div class="mb-3 row">
+                <div class="col-md-6">
+                  <label for="issue_date" class="form-label">Issue Date</label>
+                  <input type="date" class="form-control" id="issue_date" name="issue_date"
+                         value="{{ account.issue_date|default_if_none:'' }}">
+                </div>
+                <div class="col-md-6">
+                  <label for="maturity_date" class="form-label">Maturity Date</label>
+                  <input type="date" class="form-control" id="maturity_date" name="maturity_date"
+                         value="{{ account.maturity_date|default_if_none:'' }}">
+                </div>
+              </div>
+
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="is_callable" name="is_callable"
+                       {% if account.is_callable %}checked{% endif %}>
+                <label class="form-check-label" for="is_callable">Callable Before Maturity</label>
+              </div>
+
+              <div class="mb-3">
+                <label for="interest_frequency" class="form-label">Interest Payment Frequency</label>
+                <select id="interest_frequency" name="interest_frequency" class="form-select">
+                  {% for val, label in form.interest_frequency.field.choices %}
+                    <option value="{{ val }}" {% if account.interest_frequency == val %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- MMF Fields -->
+            <div class="bg-light rounded p-3 mb-3" id="extraFields">
+              <h6 class="text-muted mb-2">MMF / Yield Details</h6>
+              <label for="yield_rate" class="form-label">Annual Yield / Interest (%)</label>
+              <input type="number" step="0.01" class="form-control" id="yield_rate" name="yield_rate"
+                     value="{{ account.yield_rate|default_if_none:'' }}">
+
+              <label for="base_date" class="form-label mt-3">Date Invested</label>
+              <input type="date" class="form-control" id="base_date" name="base_date"
+                     value="{{ account.base_date|date:'Y-m-d' }}">                     
+            </div>
+
+
+            <!-- SACCO Fields -->
+            <div class="bg-light rounded p-3 mb-3" id="saccoFields">
+              <h6 class="text-muted mb-2">SACCO / Chama Details (KES)</h6>
+
+              <div class="mb-3">
+                <label for="sacco_capital_share" class="form-label">Capital Shares Held</label>
+                <input type="number" step="0.01" class="form-control" id="sacco_capital_share" name="sacco_capital_share"
+                       value="{{ account.sacco_capital_share|default_if_none:'' }}"
+                       placeholder="e.g. 5000">
+              </div>
+
+              <div class="mb-3">
+                <label for="sacco_total_contributions" class="form-label">Nominal Shares / Contributions Made So Far</label>
+                <input type="number" step="0.01" class="form-control" id="sacco_total_contributions" name="sacco_total_contributions"
+                       value="{{ account.sacco_total_contributions|default_if_none:'0' }}"
+                       placeholder="e.g. 1000">
+              </div>
+
+              <div class="mb-3">
+                <label for="sacco_dividends_earned" class="form-label">Dividends Earned So Far</label>
+                <input type="number" step="0.01" class="form-control" id="sacco_dividends_earned" name="sacco_dividends_earned"
+                       value="{{ account.sacco_dividends_earned|default_if_none:'0' }}"
+                       placeholder="e.g. 1000">
+              </div>
+
+              <div class="mb-3">
+                <label for="sacco_minimum_contribution" class="form-label">Regular Contribution Amount</label>
+                <input type="number" step="0.01" class="form-control" id="sacco_minimum_contribution" name="sacco_minimum_contribution"
+                       value="{{ account.sacco_minimum_contribution|default_if_none:'' }}"
+                       placeholder="e.g. 1000">
+              </div>
+
+              <div class="mb-3">
+                <label for="sacco_contribution_frequency" class="form-label">Contribution Frequency</label>
+                <select id="sacco_contribution_frequency" name="sacco_contribution_frequency" class="form-select">
+                  {% for val, label in form.sacco_contribution_frequency.field.choices %}
+                    <option value="{{ val }}" {% if account.sacco_contribution_frequency == val %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="sacco_dividend_frequency" class="form-label">Dividend Frequency</label>
+                <select id="sacco_dividend_frequency" name="sacco_dividend_frequency" class="form-select">
+                  {% for val, label in form.sacco_dividend_frequency.field.choices %}
+                    <option value="{{ val }}" {% if account.sacco_dividend_frequency == val %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+            </div>
+
+
+            <!-- Submit Button -->
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-success" id="submitBtn">
+                {% if account %}Update{% else %}Save{% endif %} Investment Account
+              </button>
+              <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% if alert_msg %}
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        alert("{{ alert_msg|escapejs }}");
+    });
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+    return new bootstrap.Popover(popoverTriggerEl)
+  })
+});
+
+// Toggle fields based on asset type
+const assetSelect = document.getElementById('asset_type');
+const symbolDiv = document.getElementById('symbolDiv');
+const manualDiv = document.getElementById('manualDiv');
+const bondFields = document.getElementById('bondFields');
+const extraFields = document.getElementById('extraFields');
+const saccoFields = document.getElementById('saccoFields'); // <-- SACCO block
+const reOtherFields = document.getElementById('reOtherFields');
+
+
+function toggleFields() {
+    const val = assetSelect.value;
+    
+    symbolDiv.style.display = ["stock", "crypto"].includes(val) ? "block" : "none";
+    manualDiv.style.display = ["mmf", "real_estate", "other"].includes(val) ? "block" : "none";
+    bondFields.style.display = val === "bond" ? "block" : "none";
+    extraFields.style.display = val === "mmf" ? "block" : "none";
+    saccoFields.style.display = val === "sacco" ? "block" : "none"; // <-- show SACCO only when selected
+    reOtherFields.style.display = ["real_estate", "other"].includes(val) ? "block" : "none"; // <-- added
+
+}
+
+assetSelect.addEventListener('change', toggleFields);
+window.addEventListener('DOMContentLoaded', toggleFields);
+</script>
+
+{% endblock %}

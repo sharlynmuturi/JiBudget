@@ -1,0 +1,245 @@
+{% extends 'budget/base.html' %}
+{% block title %}Set Budgets{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-journal-check fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">Set Budgets</h5>
+
+          <!-- Info icon with popover -->
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                  tabindex="0"
+                  data-bs-toggle="popover"
+                  data-bs-trigger="focus"
+                  data-bs-placement="left"
+                  data-bs-html="true"
+                  title="Set Monthly Budgets"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Select the month you want to budget for.</li>
+                      <li>Add one or more expense items and assign a limit.</li>
+                      <li>If an expense isn’t listed, add it with the + button.</li>
+                      <li>You can edit budgets later on the Budgets page.</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" id="budgetForm">
+            {% csrf_token %}
+
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Budget Info</h6>
+              <div class="mb-3">
+                <label for="id_month" class="form-label">Budget Month</label>
+                <input type="date" name="month" id="id_month" class="form-control"
+                       value="{{ current_month|date:'Y-m-d' }}">
+              </div>
+            </div>
+
+            <div id="budgetRows">
+              <!-- Row 0 (template row) -->
+              <div class="row mb-3 align-items-end budget-row">
+                <div class="col-md-6">
+                  <label class="form-label">Expense Item</label>
+                  <div class="input-group">
+                    <select name="subcategory_0" id="subcategory_0" class="form-select">
+                      <option value="">Select expense...</option>
+                      {% for subcat in subcategories %}
+                        <option value="{{ subcat.id }}">{{ subcat.name }}</option>
+                      {% endfor %}
+                    </select>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-add-subcat"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addSubCategoryModal"
+                            data-target-select="subcategory_0">+</button>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Budgeted Amount (KES)</label>
+                  <input type="number" step="0.01" name="amount_0" id="amount_0"
+                         class="form-control" placeholder="e.g. 5000">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-success" id="addRowBtn">+ Add Another Budget</button>
+            </div>
+
+            <input type="hidden" name="form-TOTAL_FORMS" id="totalForms" value="1">
+
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-primary">
+                <span class="spinner-border spinner-border-sm d-none" id="submitSpinner"
+                      role="status" aria-hidden="true"></span>
+                Save Budgets
+              </button>
+              <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Subcategory Modal (same look/feel as your other page) -->
+<div class="modal fade" id="addSubCategoryModal" tabindex="-1" aria-labelledby="addSubCategoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="addSubcategoryForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addSubCategoryLabel">Add Expense Item to Budget</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body bg-light">
+        <div class="mb-3">
+          <label for="newSubcategoryCategory" class="form-label">Expense Type</label>
+          <select id="newSubcategoryCategory" class="form-select" required>
+            {% for cat in categories %}
+              {% if not cat.is_savings_generated and not cat.is_loan_generated and cat.name != "Investments" %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+              {% endif %}
+            {% empty %}
+              <option disabled>No valid categories available</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="newSubcategoryName" class="form-label">Expense Name</label>
+          <input type="text" class="form-control" id="newSubcategoryName"
+                 placeholder="Input your expense" required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Add</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Track which select should receive the new subcategory
+  let activeSelectId = null;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const budgetRows = document.getElementById('budgetRows');
+    const addBtn = document.getElementById('addRowBtn');
+    let totalForms = 1;
+
+    // Bootstrap popovers
+    const popovers = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+      .map(el => new bootstrap.Popover(el));
+
+    // Submit spinner
+    document.getElementById('budgetForm').addEventListener('submit', () => {
+      document.getElementById('submitSpinner').classList.remove('d-none');
+    });
+
+    // When user clicks "+" beside a row, remember which select to update
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-add-subcat');
+      if (!btn) return;
+      activeSelectId = btn.getAttribute('data-target-select');
+    });
+
+    // Add new row
+    addBtn.addEventListener('click', function() {
+      const lastRow = budgetRows.querySelector('.budget-row:last-child');
+      const newRow = lastRow.cloneNode(true);
+
+      // Update names/ids and clear values
+      const selects = newRow.querySelectorAll('select');
+      const inputs  = newRow.querySelectorAll('input');
+
+      selects.forEach(sel => {
+        // clear value
+        sel.selectedIndex = 0;
+        // update name/id
+        const base = sel.name.split('_')[0]; // "subcategory"
+        const newId = `${base}_${totalForms}`;
+        sel.name = `${base}_${totalForms}`;
+        sel.id = newId;
+
+        // also update the "+" button target in this row
+        const addBtnInRow = newRow.querySelector('.btn-add-subcat');
+        addBtnInRow.setAttribute('data-target-select', newId);
+      });
+
+      inputs.forEach(inp => {
+        if (inp.type === 'number' || inp.type === 'text') inp.value = '';
+        const base = inp.name.split('_')[0]; // "amount"
+        inp.name = `${base}_${totalForms}`;
+        inp.id   = `${base}_${totalForms}`;
+      });
+
+      budgetRows.appendChild(newRow);
+      totalForms++;
+      document.getElementById('totalForms').value = totalForms;
+    });
+
+    // Add subcategory (modal submit)
+    document.getElementById('addSubcategoryForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('newSubcategoryName').value.trim();
+      const categoryId = document.getElementById('newSubcategoryCategory').value;
+
+      if (!activeSelectId) {
+        alert('No target field selected.');
+        return;
+      }
+
+      fetch("{% url 'add_subcategory' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ name: name, category_id: categoryId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Insert new option into the active select
+          const target = document.getElementById(activeSelectId);
+          if (target) {
+            const opt = new Option(data.name, data.id, true, true);
+            target.add(opt);
+            target.value = data.id;
+          }
+
+          // Close & reset modal
+          const modalEl = document.getElementById('addSubCategoryModal');
+          bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+          document.getElementById('newSubcategoryName').value = '';
+        } else {
+          alert(data.error || 'Could not add subcategory.');
+        }
+      })
+      .catch(() => alert('Could not add subcategory.'));
+    });
+  });
+})();
+</script>
+{% endblock %}

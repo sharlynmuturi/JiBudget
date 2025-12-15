@@ -1,0 +1,267 @@
+{% extends 'budget/base.html' %}
+{% block title %}Add Income{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-5">
+      <div class="card shadow-sm border-0 mb-4">
+          
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-cash-coin fs-4 me-2 text-success"></i>
+          <h5 class="mb-0 fw-semibold">
+            {% if editing %}Edit Income{% else %}Add Income{% endif %}
+          </h5>
+        
+          <!-- Info icon with popover pushed right -->
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-auto p-0" 
+                  tabindex="0"
+                  data-bs-toggle="popover" 
+                  data-bs-trigger="focus" 
+                  data-bs-placement="left" 
+                  data-bs-html="true"
+                  title="Record an Income"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Select the wallet where income was received and assign its category. Can't find yours in the dropdown? Add your own.</li>
+                      <li>You can include notes for details.</li>
+                      <li>Once income is logged, you may view or edit its details anytime on the transactions page</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-warning alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Wallet</h6>
+              <div class="input-group">
+                {{ form.income_source }}
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addSourceModal">+</button>
+              </div>
+            </div>
+
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Income Details</h6>
+
+              <div class="mb-3">
+                <label for="id_subcategory" class="form-label">Income</label>
+                <div class="input-group">
+                  <select name="subcategory" id="id_subcategory" class="form-select">
+                    <option value="">Select income...</option>
+                    {% for subcat in subcategories %}
+                      <option value="{{ subcat.id }}" data-category="{{ subcat.category.id }}" {% if form.instance.subcategory and form.instance.subcategory.id == subcat.id %}selected{% endif %}>{{ subcat.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addSubCategoryModal">+</button>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="{{ form.amount.id_for_label }}" class="form-label">Amount (KES)</label>
+                  <input type="number" name="amount" id="{{ form.amount.id_for_label }}" class="form-control" placeholder="e.g. 5000" value="{{ form.amount.value|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                  <label for="{{ form.date.id_for_label }}" class="form-label">Date of Income</label>
+                  <input type="date" name="date" id="{{ form.date.id_for_label }}" class="form-control" value="{{ form.date.value|default:'' }}">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.source.id_for_label }}" class="form-label">Description/Notes (Optional)</label>
+              <input type="text" name="source" id="{{ form.source.id_for_label }}" class="form-control" placeholder="e.g. Cash gift from Joy" value="{{ form.source.value|default:'' }}">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-success" id="submitBtn">
+                <span class="spinner-border spinner-border-sm d-none" id="submitSpinner" role="status" aria-hidden="true"></span>
+                {% if editing %}Update{% else %}Save{% endif %} Income
+              </button>
+              <a href="{% url 'my_dashboard' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Income Subcategory Modal -->
+<div class="modal fade" id="addSubCategoryModal" tabindex="-1" aria-labelledby="addSubCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="addIncomeSubcatForm">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addSubCategoryModalLabel">Add Income</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <label class="form-label">Income Type</label>
+          <select name="category" class="form-select mb-3">
+            {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+          <label class="form-label">Income</label>
+          <input type="text" name="name" class="form-control" placeholder="Input your income source" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Add</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Wallet Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addSourceForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addSourceModalLabel">Add Wallet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <input type="text" name="name" id="sourceName" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
+  });
+</script>
+
+
+<!-- Subcategory filter script -->
+<script>
+  const categorySelect = document.getElementById('id_category');
+  const subcategorySelect = document.getElementById('id_subcategory');
+
+  function filterSubcategories() {
+    const selectedCategory = categorySelect.value;
+    Array.from(subcategorySelect.options).forEach(option => {
+      const category = option.getAttribute('data-category');
+      option.hidden = category && category !== selectedCategory;
+    });
+    subcategorySelect.value = '';
+  }
+
+  categorySelect.addEventListener('change', filterSubcategories);
+  window.addEventListener('DOMContentLoaded', filterSubcategories);
+</script>
+
+<script>
+document.getElementById('addIncomeSubcatForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const name = form.querySelector('input[name="name"]').value.trim();
+  const category = form.querySelector('select[name="category"]').value;
+
+  fetch("{% url 'add_income_subcategory' %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: new URLSearchParams({ name, category })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.id) {
+      const select = document.getElementById("id_subcategory");
+
+      // Prevent duplicates in dropdown
+      let exists = Array.from(select.options).some(opt => opt.value == data.id);
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = data.id;
+        option.textContent = data.name;
+        option.setAttribute('data-category', data.category_id);
+        option.selected = true;
+        select.appendChild(option);
+      } else {
+        select.value = data.id;
+      }
+
+      // Close modal + reset form
+      form.reset();
+      bootstrap.Modal.getInstance(document.getElementById('addSubCategoryModal')).hide();
+      filterSubcategories(); // keep your filtering intact
+    } else {
+      alert(data.error || 'This subcategory already exists.');
+    }
+  })
+  .catch(err => console.error("Error adding income subcategory:", err));
+});
+</script>
+
+<script>
+document.getElementById('addSourceForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('sourceName');
+  const name = nameInput.value;
+
+
+    fetch("{% url 'add_expense_source' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ name: name })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const select = document.getElementById("id_income_source");
+        let exists = Array.from(select.options).find(opt => opt.value == data.id);
+        if (!exists) {
+          const option = document.createElement("option");
+          option.value = data.id;
+          option.textContent = data.name;
+          select.appendChild(option);
+        }
+        select.value = data.id;
+    
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addSourceModal'));
+        modal.hide();
+        nameInput.value = '';
+      } else {
+        alert(data.error || 'Could not add wallet.');
+      }
+    });
+});
+</script>
+
+<script>
+document.querySelector('form').addEventListener('submit', () => {
+  document.getElementById('submitSpinner').classList.remove('d-none');
+});
+</script>
+{% endblock %}

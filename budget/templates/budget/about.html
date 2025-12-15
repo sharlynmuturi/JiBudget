@@ -1,0 +1,160 @@
+{% extends 'budget/base.html' %}
+{% block title %}Welcome to Jibudget{% endblock %}
+
+{% block content %}
+<div class="text-center py-5 bg-light rounded shadow-sm mb-5">
+  <h1 class="display-4 fw-bold text-primary">What is <span class="text-dark">Jibudget</span></h1>
+  <p class="fs-5 text-muted">
+  Whether you're just starting to earn or trying to make sense of your spending, <strong>Jibudget</strong> helps you plan, track, and take control of your money.
+</p>
+  
+
+
+<div class="container mt-5">
+  <div class="bg-light rounded p-4 p-md-5 shadow-sm">
+
+<div class="container mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+      <h2 class="text-center mb-4">What You Can Do with Jibudget</h2>
+    </div>
+  </div>
+</div>
+
+
+<div class="container my-5">
+  <div class="row text-center g-4">
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-success">💰</div>
+        <h5 class="fw-bold">Track Your Income</h5>
+        <p class="text-muted">
+        Track where your money comes from — salary, business, side gigs, or pocket money — it's all part of your financial picture.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-danger">🧾</div>
+        <h5 class="fw-bold">Record Expenses</h5>
+        <p class="text-muted">
+        Capture each payment — from lunch to impulse buys — and learn your habits. It's the small leaks that sink the ship!
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-primary">🎯</div>
+        <h5 class="fw-bold">Set Saving Goals</h5>
+        <p class="text-muted">
+        Saving for school fees, a new phone, or emergencies? Track your progress, and stay motivated as you watch your savings grow over time.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-info">📊</div>
+        <h5 class="fw-bold">Plan Monthly Budgets</h5>
+        <p class="text-muted">
+        Plan your spending for essentials like rent, food, transport, or even Netflix — and see how well you stick to it.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-secondary">📈</div>
+        <h5 class="fw-bold">Get Smart Insights</h5>
+        <p class="text-muted">
+          See your spending and income patterns with clear summaries. Whether you're tracking spending trends, income, or budget over time, get clear insights you can act on.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="p-3">
+        <div class="fs-1 mb-2 text-warning">📂</div>
+        <h5 class="fw-bold">Export to CSV</h5>
+        <p class="text-muted">
+          Download your data for personal analysis, reporting or backup — it’s yours, anytime.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="bg-light rounded p-4 p-md-5 shadow-sm">
+
+<h3 class="fw-bold mb-3 text-center">You’re in Control</h3>
+    <p class="fs-5 text-muted text-center mb-4">
+      Jibudget doesn’t link to your accounts — and that’s by design. Jibudget gives you the tools — you decide how to use them.
+    </p>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <h5 class="fw-semibold text-success">Build Intentional Habits</h5>
+        <p class="text-muted">
+          Recording your income and expenses manually makes you more aware of how you spend. It’s budgeting that builds discipline — not just data.
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <h5 class="fw-semibold text-warning">Log Transactions as They Happen</h5>
+        <p class="text-muted">
+          Quickly enter your spending or earnings — whether it's lunch money, a gig payment, or a fare. It's fast, light, and built for real life.
+        </p>
+      </div>
+    </div>
+
+</div>
+</div>
+
+</div>
+
+</div>
+
+<footer class="bg-light text-muted py-4 mt-5">
+  <div class="container">
+    <div class="row align-items-center gy-3 text-center text-md-start">
+
+      <!-- Site Description -->
+      <div class="col-md-6">
+        <h5 class="fw-bold text-dark mb-1">Jibudget</h5>
+        <p class="mb-0" style="font-size: 0.95rem;">
+          A simple budgeting tool built for real life — helping Kenyans track income, manage spending, and hit savings goals.
+        </p>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-md-3 offset-md-3">
+        <h6 class="text-dark fw-semibold mb-2">Quick Links</h6>
+        <ul class="list-unstyled small">
+          {% if not user.is_authenticated %}
+            <li><a href="{% url 'login' %}" class="text-muted text-decoration-none">Log In</a></li>
+            <li><a href="{% url 'signup' %}" class="text-muted text-decoration-none">Create Account</a></li>
+            <li><a href="{% url 'home' %}" class="text-muted text-decoration-none">Home</a></li>
+          {% else %}
+            <li><a href="{% url 'dashboard' %}" class="text-muted text-decoration-none">Dashboard</a></li>
+            <li><a href="{% url 'logout' %}" class="text-muted text-decoration-none">Log Out</a></li>
+            <li><a href="{% url 'home' %}" class="text-muted text-decoration-none">Home</a></li>
+          {% endif %}
+
+        </ul>
+      </div>
+    </div>
+
+    <!-- Divider -->
+
+    <!-- Copyright -->
+    <div class="text-center small text-muted">
+      &copy; {{ now|date:"Y" }} Jibudget. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+
+{% endblock %}

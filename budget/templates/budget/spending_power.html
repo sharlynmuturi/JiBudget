@@ -1,0 +1,509 @@
+{% extends "budget/base.html" %}
+{% block title %}My Money's Health{% endblock %}
+
+{% block content %}
+
+<style>
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  margin-bottom: 2rem;
+}
+
+/* Larger screens: allow more height */
+@media (min-width: 1400px) {
+  .chart-container {
+    height: 450px; /* bigger */
+  }
+}
+
+@media (min-width: 1600px) {
+  .chart-container {
+    height: 550px; /* even bigger */
+  }
+}
+
+</style>
+
+<div class="container-fluid mt-4">
+
+<div>
+  <hr class="mb-0" style="border: none;">
+
+  <div class="d-flex align-items-center">
+    <h2 class="mb-1 d-flex align-items-center">
+      <i class="bi bi-heart-pulse me-2"></i> My Financial Health
+    </h2>
+
+    <!-- Info icon with popover -->
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 p-0" 
+            tabindex="0"
+            data-bs-toggle="popover" 
+            data-bs-trigger="focus" 
+            data-bs-placement="right" 
+            data-bs-html="true"
+            title="My Financial Health"
+            data-bs-content="
+              <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                  <li>These insights are based on your income, expenses, savings, and loan records.</li>
+                  <li>Averages and forecasts come from your past spending and income patterns.</li>
+                  <li>The more consistently you record transactions, the clearer and more accurate your financial picture becomes.</li>
+                  <li>Balances and safety nets are calculated from your current wallets, savings, and loan repayments.</li>
+              </ul>
+            ">
+      <i class="bi bi-question-circle fs-4"></i>
+    </button>
+  </div>
+
+  <p class="text-muted">Explore detailed monthly insights into your cash flow health.</p>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  popoverTriggerList.forEach(function (popoverTriggerEl) {
+    new bootstrap.Popover(popoverTriggerEl)
+  })
+});
+</script>
+
+<div class="container mt-4 p-1">
+
+{% comment %}
+Get the last month row (current month) for top card metrics
+monthly_table = [
+    (month_name, rollover, avg_daily_spending, age, liquidity_buffer, days_cash_on_hand),
+    ...
+]
+{% endcomment %}
+{% with current_month_row=monthly_table|last %}
+<div class="row g-3 text-center">
+
+  <!-- Liquidity Buffer -->
+  <div class="col-6 col-md-3 mb-3">
+    <div class="container p-3 bg-light rounded shadow-sm"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="On average, how long your money can last you if no new income comes in.">
+      <div class="mb-2">
+        <i class="bi bi-shield-check fs-1 text-info"></i>
+      </div>
+      <h6 class="mb-1">Liquidity Buffer</h6>
+      <p class="fs-2 fw-bold text-info">{{ liquidity_buffer_days }}</p>
+        <small class="text-muted d-block">
+          {{ current_month_row.4 }} days covered at this month's spending pace.<br>
+        </small>
+
+    </div>
+  </div>
+
+  <!-- Days Cash on Hand -->
+  <div class="col-6 col-md-3 mb-3">
+    <div class="container p-3 bg-light rounded shadow-sm"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="On average, how long your current funds can cover essential expenses with no new income.">
+      <div class="mb-2">
+        <i class="bi bi-wallet2 fs-1 text-success"></i>
+      </div>
+      <h6 class="mb-1">Days Cash on Hand</h6>
+      <p class="fs-2 fw-bold text-success">{{ days_cash_on_hand }}</p>
+        <small class="text-muted d-block">
+          {{ current_month_row.5 }} days of essentials covered at this month's spending pace. <br>
+        </small>
+    </div>
+  </div>
+
+  <!-- Rollover Balance -->
+  <div class="col-6 col-md-3 mb-3">
+    <div class="container p-3 bg-light rounded shadow-sm"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="The portion of your funds remaining unspent from previous months.">
+      <div class="mb-2">
+        <i class="bi bi-cash-stack fs-1 text-primary"></i>
+      </div>
+      <h6 class="mb-1">Rollover Balance</h6>
+      <p class="fs-2 fw-bold text-primary">{{ rollover_amount }}</p>
+      <small class="text-muted d-block">
+        {{ rollover_pct }}% of your available funds are saved from past months.
+      </small>
+    </div>
+  </div>
+
+  <!-- Age of Your Money -->
+  <div class="col-6 col-md-3 mb-3">
+    <div class="container p-3 bg-light rounded shadow-sm"
+         tabindex="0"
+         data-bs-toggle="popover"
+         data-bs-trigger="hover focus"
+         data-bs-placement="top"
+         data-bs-html="true"
+         data-bs-content="The average time your money stays in your account before being spent.">
+      <div class="mb-2">
+        <i class="bi bi-clock-history fs-1 text-warning"></i>
+      </div>
+      <h6 class="mb-1">Age of Money</h6>
+      <p class="fs-2 fw-bold text-warning">{{ weighted_age_today }}</p>
+      <small class="text-muted d-block">
+        <strong>This Month:</strong> {{ current_month_row.3 }} days<br>
+      </small>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+  popoverTriggerList.forEach(function (popoverTriggerEl) {
+    new bootstrap.Popover(popoverTriggerEl);
+  });
+});
+</script>
+{% endwith %}
+
+
+
+
+
+  <!--<div class="row text-center g-3">-->
+  <!--  <div class="col-6 col-md-3 mb-4">-->
+  <!--    <div class="mb-2">-->
+  <!--      <i class="bi bi-shield-check fs-1 text-info"></i>-->
+  <!--    </div>-->
+  <!--    <h5 class="mb-1">Liquidity Buffer</h5>-->
+  <!--    <p class="fs-2 fw-bold text-info">{{ liquidity_buffer_days }}</p>-->
+  <!--    <small class="mb-0 text-muted">Your money can last you about {{ liquidity_buffer_days }} days if no new income comes in.</small>-->
+  <!--  </div>-->
+
+  <!--  <div class="col-6 col-md-3 mb-4">-->
+  <!--    <div class="mb-2">-->
+  <!--      <i class="bi bi-wallet2 fs-1 text-success"></i>-->
+  <!--    </div>-->
+  <!--    <h5 class="mb-1">Days Cash on Hand</h5>-->
+  <!--    <p class="fs-2 fw-bold text-success">{{ days_cash_on_hand }}</p>-->
+  <!--    <small class="mb-0 text-muted"> Your current funds can cover essential expenses for around {{ days_cash_on_hand }} days before needing new income.</small>-->
+  <!--  </div>-->
+
+  <!--  <div class="col-6 col-md-3 mb-4">-->
+  <!--    <div class="mb-2">-->
+  <!--      <i class="bi bi-cash-stack fs-1 text-primary"></i>-->
+  <!--    </div>-->
+  <!--    <h5 class="mb-1">Rollover Balance</h5>-->
+  <!--    <p class="fs-2 fw-bold text-primary">{{ rollover_amount }}</p>-->
+  <!--    <small class="mb-0 text-muted">{{ rollover_pct }}% of your available funds remained unspent from previous months' budget.</small>-->
+  <!--  </div>-->
+
+  <!--  <div class="col-6 col-md-3 mb-4">-->
+  <!--    <div class="mb-2">-->
+  <!--      <i class="bi bi-clock-history fs-1 text-warning"></i>-->
+  <!--    </div>-->
+  <!--    <h5 class="mb-1">Age of Your Money</h5>-->
+  <!--    <p class="fs-2 fw-bold text-warning">{{ weighted_age_today }}</p>-->
+  <!--    <small class="mb-0 text-muted">Your money stays in your account for about {{ weighted_age_today }} days before you spend it.</small>-->
+  <!--  </div>-->
+  <!--</div>-->
+  
+  
+  
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  popoverTriggerList.map(function (popoverTriggerEl) {
+    return new bootstrap.Popover(popoverTriggerEl)
+  })
+})
+</script>
+
+<br>
+
+<p>
+  <button 
+    class="btn btn-sm btn-outline-primary shadow-sm fw-semibold" 
+    type="button" 
+    data-bs-toggle="collapse" 
+    data-bs-target="#chartInfo" 
+    aria-expanded="false" 
+    aria-controls="chartInfo"
+    style="min-width: 200px;"
+  >
+    What does this chart show?
+  </button>
+</p>
+
+<div class="collapse mt-2" id="chartInfo">
+  <div class="card border-primary shadow-sm bg-white">
+    <div class="card-body text-muted small" style="line-height: 1.5;">
+      <p>
+        This chart visualizes your financial health over the months by tracking three key metrics:
+      </p>
+      <ul>
+        <li><strong>Age of Money</strong>: Think of it as your "speed of spending". A higher age means you are holding onto cash longer - a sign of healthy money habits.</li>
+        <li><strong>Liquidity Buffer</strong>: It's your "rainy day cushion". If you stopped getting any new income today, how many days could you keep paying your bills at your current rate - how prepared are you for unexpected expenses or income delays?</li>
+        <li><strong>Days Cash on Hand</strong>: Similar to the liquidity buffer but focused only on your essential expenses (like rent, food, utilities). How long you could maintain your basic needs before running out - your true financial resilience.</li>
+      </ul>
+      <p>
+        Tracking these metrics over time helps you spot trends, make informed budgeting decisions, and build a stronger, more stable financial future.
+      </p>
+    </div>
+  </div>
+</div>
+
+
+<div class="chart-container">
+  <canvas id="moneyHealthChart"></canvas>
+</div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const ctx = document.getElementById('moneyHealthChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: {{ months_labels|safe }},
+          datasets: [
+            {
+              label: 'Age of Money',
+              data: {{ age_of_money_data|safe }},
+              borderColor: 'orange',
+              backgroundColor: 'rgba(255,165,0,0.2)',
+              tension: 0.3
+            },
+            {
+              label: 'Liquidity Buffer',
+              data: {{ liquidity_data|safe }},
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0,123,255,0.2)',
+              tension: 0.3
+            },
+            {
+              label: 'Days Cash on Hand',
+              data: {{ days_cash_data|safe }},
+              borderColor: 'green',
+              backgroundColor: 'rgba(40,167,69,0.2)',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            title: {
+              display: true,
+              text: 'Money Health Over Time'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Months'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Days'
+              }
+            }
+          }
+        }
+      });
+    </script>
+
+<p>
+  <button 
+    class="btn btn-sm btn-outline-primary shadow-sm fw-semibold" 
+    type="button" 
+    data-bs-toggle="collapse" 
+    data-bs-target="#incomeChartInfo" 
+    aria-expanded="false" 
+    aria-controls="incomeChartInfo"
+    style="min-width: 200px;"
+  >
+    What does this chart show?
+  </button>
+</p>
+
+<div class="collapse mt-2" id="incomeChartInfo">
+  <div class="card border-primary shadow-sm bg-white">
+    <div class="card-body text-muted small" style="line-height: 1.5;">
+      <p>
+        This chart breaks down your monthly income into two main parts:
+      </p>
+      <ul>
+        <li><strong>Rollover</strong>: The portion of your income that remains unspent from previous months, now boosting this month's budget. It shows how much leftover money you are bringing into the current month.</li>
+        <li><strong>New Income</strong>: The fresh income you received during the current month beyond the rollover amount. This represents the actual earnings added this month.</li>
+      </ul>
+      <p>
+        The stacked bars illustrate how your total income each month is composed of these two parts, helping you understand whether your cash flow is driven more by leftover funds or new earnings.
+      </p>
+    </div>
+  </div>
+</div>
+
+
+
+
+<br>
+<div class="chart-container">
+  <canvas id="incomeStackedChart"></canvas>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctxIncomeStack = document.getElementById('incomeStackedChart').getContext('2d');
+new Chart(ctxIncomeStack, {
+  type: 'bar',
+  data: {
+    labels: {{ months_labels|safe }},
+    datasets: [
+      {
+        label: 'Rollover',
+        data: {{ rollover_data|safe }},
+        backgroundColor: 'rgba(255, 206, 86, 0.7)',
+        stack: 'Stack 0',
+        maxBarThickness: 30,
+      },
+      {
+        label: 'New Income',
+        data: {{ new_income_data|safe }},
+        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+        stack: 'Stack 0',
+        maxBarThickness: 30,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: {
+        display: true,
+        text: 'Income Breakdown by Month'
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        title: { display: true, text: 'Months' },
+        barPercentage: 0.5,
+        categoryPercentage: 0.5,
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        title: { display: true, text: 'Amount (KES)' }
+      }
+    }
+  }
+});
+
+
+</script>
+
+<div class="d-flex align-items-center mb-3">
+
+    
+    <h5 class="mb-0">
+      <i class="bi bi-shield-check me-2"></i>Monthly Money Health
+        <small class="text-muted d-block" style="font-size: 0.85rem;">
+            Track rollover, spending habits, and cash buffer month by month
+        </small>
+    </h5>
+</div>
+
+<table class="table table-bordered table-hover table-sm">
+    <thead class="table-light">
+        <tr>
+            <th>Month</th>
+            <th class="text-end">Rollover</th>
+            <th class="text-end">Avg Daily Spending</th>
+            <th class="text-end">Age of Money (Days)</th>
+            <th class="text-end">Liquidity Buffer (Days)</th>
+            <th class="text-end">Days Cash on Hand (Days)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for month, rollover, avg_daily, age, liquidity_buffer, days_cash_on_hand in monthly_table %}
+        <tr>
+            <td>{{ month }}</td>
+            <td class="text-end fw-bold">{{ rollover }}</td>
+            <td class="text-end">{{ avg_daily|floatformat:2 }}</td>
+            <td class="text-end">{{ age }}</td>
+            <td class="text-end">{{ liquidity_buffer }}</td>
+            <td class="text-end">{{ days_cash_on_hand }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No data available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<p>
+  <button 
+    class="btn btn-sm btn-outline-primary shadow-sm fw-semibold" 
+    type="button" 
+    data-bs-toggle="collapse" 
+    data-bs-target="#chartInfo" 
+    aria-expanded="false" 
+    aria-controls="chartInfo"
+    style="min-width: 200px;"
+  >
+    How do I Improve my Money's Health?
+  </button>
+</p>
+
+<div class="collapse mt-2" id="chartInfo">
+  <div class="card border-primary shadow-sm bg-white">
+    <div class="card-body text-muted small" style="line-height: 1.5;">
+      <ul>
+          <li>Keep total monthly expenses below your total monthly income.</li>
+          <li>Assign every shilling to a spending category, and keep each category within its limit to grow your buffer.</li>
+          <li>Track your spending daily to avoid budget surprises.</li>
+          <li>Review and reduce non-essential expenses where possible.</li>
+          <li>Check your 'Money Vitals' insights regularly and adjust your budget as needed.</li>
+          <li>Record every real-life transaction so your app matches reality - get the clearest, most accurate picture of your finances.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+<script>
+  // Enable all tooltips on the page
+  document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
+
+{% endblock %}

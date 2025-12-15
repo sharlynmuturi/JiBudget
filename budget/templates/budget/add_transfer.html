@@ -1,0 +1,101 @@
+{% extends 'budget/base.html' %}
+{% block title %}Transfer Between Wallets{% endblock %}
+
+{% block content %}
+<div class="container-fluid section-spacing px-0">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <i class="bi bi-arrow-left-right fs-4 me-2 text-primary"></i>
+          <h5 class="mb-0 fw-semibold">Transfer Between Wallets</h5>
+
+          <!-- Info popover -->
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary ms-auto p-0"
+                  tabindex="0"
+                  data-bs-toggle="popover"
+                  data-bs-trigger="focus"
+                  data-bs-placement="left"
+                  title="Wallet Transfers"
+                  data-bs-html="true"
+                  data-bs-content="
+                    <ul style='padding-left: 1rem; margin-bottom: 0;'>
+                      <li>Pick the wallet you want to transfer money from.</li>
+                      <li>Select the wallet you want to transfer money into.</li>
+                      <li>Enter the amount and optional note.</li>
+                    </ul>
+                  ">
+            <i class="bi bi-question-circle fs-4"></i>
+          </button>
+        </div>
+
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" id="walletTransferForm">
+            {% csrf_token %}
+
+            <div class="bg-light rounded p-3 mb-3">
+              <h6 class="text-muted mb-2">Transfer Info</h6>
+
+              <div class="mb-3">
+                <label for="{{ form.from_wallet.id_for_label }}" class="form-label">From Wallet</label>
+                {{ form.from_wallet }}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ form.to_wallet.id_for_label }}" class="form-label">To Wallet</label>
+                {{ form.to_wallet }}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount (KES)</label>
+                {{ form.amount }}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                {{ form.date }}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ form.note.id_for_label }}" class="form-label">Note (optional)</label>
+                {{ form.note }}
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="submit" class="btn btn-primary">
+                <span class="spinner-border spinner-border-sm d-none" id="submitSpinner" role="status"></span>
+                Save Transfer
+              </button>
+              <a href="{% url 'wallet_overview' %}" class="btn btn-outline-secondary">Back</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Bootstrap popovers
+  const popovers = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    .map(el => new bootstrap.Popover(el));
+
+  // Spinner on submit
+  document.getElementById("walletTransferForm").addEventListener("submit", function () {
+    document.getElementById("submitSpinner").classList.remove("d-none");
+  });
+});
+</script>
+{% endblock %}

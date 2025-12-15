@@ -1,0 +1,16 @@
+{% extends 'budget/base.html' %}
+{% block title %}Delete Budget Item{% endblock %}
+{% block content %}
+
+<h4>Confirm Delete</h4>
+<p>Are you sure you want to delete the budget item for <strong>{{ budget.category.name }}</strong>
+{% if budget.subcategory %} → <strong>{{ budget.subcategory.name }}</strong>{% endif %}
+for {{ budget.month|date:"F Y" }}?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a href="{% url 'all_budgets' %}" class="btn btn-secondary">Cancel</a>
+</form>
+
+{% endblock %}
